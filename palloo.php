@@ -126,7 +126,6 @@ function sendText($service, $number, $title, $msg) {
 			$to = $number . "@tmomail.net";
 			$execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
 			$execution = str_replace(array("'"), '"', $execution);
-			var_dump($execution);
 			shell_exec($execution);
 			break;
 		case "sprint":
@@ -140,8 +139,9 @@ function sendText($service, $number, $title, $msg) {
 }
 
 function sendAnEmail($to, $title, $msg) {
-	//set_time_limit(360);
-	shell_exec("sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'");
+	$execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
+	$execution = str_replace(array("'"), '"', $execution);
+	shell_exec($execution);
 	return;
 }
 
