@@ -1,0 +1,8 @@
+RewriteEngine On
+RewriteRule   palloo   palloo.php
+RewriteRule   index   index.php
+<Files ~ "\.py$">
+  Order allow,deny
+  Deny from all
+</Files>
+RedirectMatch 403 ^.*/Ext

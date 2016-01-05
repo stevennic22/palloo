@@ -10,6 +10,22 @@ echo "<script type='text/javascript'>
 $(document).ready(function() {
   $('.test').hover(function(){ $(this).toggleClass('cn'); });
 });
+
+<!--
+var viewportwidth;
+var viewportheight;
+if (typeof window.innerWidth != 'undefined'){
+    viewportwidth = window.innerWidth,
+    viewportheight = window.innerHeight
+} else if (typeof document.documentElement != 'undefined'&& typeof document.documentElement.clientWidth !='undefined' && document.documentElement.clientWidth != 0){
+    viewportwidth = document.documentElement.clientWidth,
+    viewportheight = document.documentElement.clientHeight
+} else{
+    viewportwidth = document.getElementsByTagName('body')[0].clientWidth,
+    viewportheight = document.getElementsByTagName('body')[0].clientHeight
+}
+//document.write('<p>Your viewport width is '+viewportwidth+'x'+viewportheight+'</p>');
+//-->
 }
 </script>";
 echo "<title>";
@@ -113,33 +129,30 @@ function sendText($service, $number, $title, $msg) {
 	switch(strtolower($service)){
 		case "att":
 			$to = $number . "@txt.att.net";
-			//set_time_limit(360);
 			$execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
+			$execution = str_replace(array("'"), '"', $execution);
 			shell_exec($execution);
 			break;
 		case "verizon":
 			$to = $number . "@vtext.com";
-			//set_time_limit(360);
 			$execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
+			$execution = str_replace(array("'"), '"', $execution);
 			shell_exec($execution);
 			break;
 		case "tmobile":
 			$to = $number . "@tmomail.net";
-			//set_time_limit(360);
 			$execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
+			$execution = str_replace(array("'"), '"', $execution);
 			var_dump($execution);
 			shell_exec($execution);
 			break;
 		case "sprint":
 			$to = $number . "@messaging.sprintpcs.com";
-			//set_time_limit(360);
 			$execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
+			$execution = str_replace(array("'"), '"', $execution);
 			shell_exec($execution);
 			break;
 	}
-	//$to = "@tmomail.net"; //your number here
-	//set_time_limit(360);
-	//shell_exec("sendEmail.py -r " . $to . " -m " . $msg . " -t " . $title);
 	return;
 }
 
@@ -527,7 +540,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 					}
 					//echo $alertVars[0];
 					for($i=0;$i < count($alertVars);$i++){
-						echo "<div style='text-align: center;'>" . $alertVars[$i] . "</div>";
+						if ($i == 0){
+							echo "<div style='text-align: center;'>Title: " . $alertVars[$i] . "</div>";
+						} else if ($i == 1){
+							echo "<div style='text-align: center;'>Message: " . $alertVars[$i] . "</div>";
+						} else {
+							echo "<div style='text-align: center;'>" . $alertVars[$i] . "</div>";
+						}
 					}
 					break;
 				case "auto":
