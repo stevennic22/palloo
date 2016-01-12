@@ -21,8 +21,8 @@ def sendingMail():
 
 	# me == the sender's email address
 	# you == the recipient's email address
-	if len(msgSetup) < 3:
-		msg['Subject'] = ""
+	if msgSetup[2] == "":
+		msg['Subject'] = "No Subject"
 	else:
 		msg['Subject'] = msgSetup[2]
 	msg['From'] = "" #Put from email address
@@ -39,7 +39,7 @@ def sendingMail():
 def main(argv):
 	global msgSetup
 	try:
-		opts, args = getopt.getopt(argv,"hr:m:t", ["help", "recipient=", "msg=", "title="])
+		opts, args = getopt.getopt(argv,"hr:m:t:", ["help", "recipient=", "msg=", "title="])
 		if not opts:
 			# Return proper usage of script if in error
 			errPrint()

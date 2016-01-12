@@ -1,5 +1,5 @@
 <?php
-//TO DO: FOR ALERT, FIND CURRENT PERSON ON CALL (INSIDE OF ALERT FUNCTION), IF NEAL, SEND TO NEAL VIA INFO, IF NOT, SEND TO NEAL AND ON CALL USER
+//TO DO: In trimOnCallSet & trimOnCallCheck, if script errors out and can't log in, mark that in the PHP Transfer file. Also triple check home copies of all files.
 
 echo "<!DOCTYPE html><html><head>";
 echo '<link rel="shortcut icon" type="image/x-icon" href="https://nealv4test.sleepex.com/favicon.ico" />';
@@ -43,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 		}
 	}
 }
-echo "</title><style>.main {margin: 20px 0;
+echo "</title><style>.main {margin: auto;
 		//margin-left: auto;
 		//margin-right: auto;
 		//width: 90%;
@@ -104,7 +104,7 @@ function pushBullet($email, $title, $msg) {
 }
 
 function sendText($service, $number, $title, $msg) {
-	$service = str_replace(array("&","-"," "), '', $service);
+	$service = stripper(str_replace(array("&","-"," "), '', $service));
 	$number = str_replace(array("&","-"," ","(",")"), '', $number);
 	if (strlen($number) == 11) {
 		$number = substr($number,1);
@@ -214,9 +214,10 @@ function setUser($userToSet, $rType) {
 			}
 		} else {
 			set_time_limit(360);
-			$command = escapeshellcmd('trimOnCallSet.py -p ');
+			$command = escapeshellcmd('trimOnCallSet.py -s ');
+			$setService = escapeshellcmd($line[3]);
 			$setVars = escapeshellcmd($line[1]);
-			shell_exec($command . $setVars);
+			shell_exec($command . '"' . $setService . '" -p ' . $setVars);
 			
 			//Open On Call file and get all information
 			$ocfilename = "Ext/oncall";
@@ -350,25 +351,34 @@ function checkUser($rType){
 }
 
 function getAlertVars($from) {
-	
+	//$file[0] == filename
+	//$file[1] == phone number
+	//$file[2] == email address
+	//$file[3] == cell service
+	//$file[4] == method
+	//$file[5] == extra information
+	//If method is sms - 3 is carrier
+	//If method is pushover - 5 is device ID
+	//If method is email - 5 would not be needed (unless personal email)
+	//If method is pushbullet - 5 would be personal user email address (if blank, use work email)
 	function alertOutput($file,$comVars) {
-		switch(strtolower(stripper($file[3]))){
+		switch(strtolower(stripper($file[4]))){
 			case "pushover":
-				pushOver(stripper($file[4]), $comVars[0], $comVars[1]);
+				pushOver(stripper($file[5]), $comVars[0], $comVars[1]);
 				break;
 			case strtolower("SMS"):
-				sendText($file[4], stripper($file[1]), $comVars[0], $comVars[1]);
+				sendText($file[3], stripper($file[1]), $comVars[0], $comVars[1]);
 				break;
 			case "pushbullet":
-				if (isset($file[4])) {
-					pushBullet($file[4], $comVars[0], $comVars[1]);
+				if (isset($file[5])) {
+					pushBullet($file[5], $comVars[0], $comVars[1]);
 				} else {
 					pushBullet($file[2], $comVars[0], $comVars[1]);
 				}
 				break;
 			case "email":
-				if (isset($file[4])) {
-					sendAnEmail(stripper($file[4]), $comVars[0], $comVars[1]);
+				if (isset($file[5])) {
+					sendAnEmail(stripper($file[5]), $comVars[0], $comVars[1]);
 				} else {
 					sendAnEmail(stripper($file[2]), $comVars[0], $comVars[1]);
 				}
@@ -453,12 +463,13 @@ function getAlertVars($from) {
 	//$line[0] == filename
 	//$line[1] == phone number
 	//$line[2] == email address
-	//$line[3] == method
-	//$line[4] == extra information
-	//If method is phone - 4 is carrier
-	//If method is pushover - 4 is device ID
-	//If method is email - 4 would not be needed
-	//If method is pushbullet - 4 would be personal user email address (if blank, use primary email address)
+	//$line[3] == cell service
+	//$line[4] == method
+	//$line[5] == extra information
+	//If method is phone - 3 is carrier
+	//If method is pushover - 5 is device ID
+	//If method is email - 5 would not be needed (unless personal email)
+	//If method is pushbullet - 5 would be personal user email address (if blank, use work email)
 		if (stripper($line[0]) == strtolower("neal")) {
 			alertOutput($line,$comVars);
 		} else {
@@ -523,13 +534,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 					}
 					//echo $alertVars[0];
 					for($i=0;$i < count($alertVars);$i++){
-						if ($i == 0){
-							echo "<div style='text-align: center;'>Title: " . $alertVars[$i] . "</div>";
-						} else if ($i == 1){
-							echo "<div style='text-align: center;'>Message: " . $alertVars[$i] . "</div>";
-						} else {
-							echo "<div style='text-align: center;'>" . $alertVars[$i] . "</div>";
-						}
+						echo "<div style='text-align: center;'>" . $alertVars[$i] . "</div>";
 					}
 					break;
 				case "auto":
