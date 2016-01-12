@@ -73,7 +73,7 @@ def setCEmail(serviceEmail):
 	driver.find_element_by_id("cMemail").send_keys(serviceEmail)
 	driver.find_element_by_id("cMemail").submit()
 
-def conversionTherapy(aNumber, cProvider):
+def cellularConvert(aNumber, cProvider):
 	aNumber = aNumber[1:]
 	for case in switch(cProvider):
 		if case('att'):
@@ -163,7 +163,7 @@ def main(argv):
 		elif opt in ("-p", "--phone"):
 			phoneNum = arg;
 	
-	cellConvert = conversionTherapy(phoneNum, cellService)
+	cellConvert = cellularConvert(phoneNum, cellService)
 	if cellConvert == "Not a valid cellular service at this time":
 		print "There was an error setting the phone number"
 		sys.exit(2)
