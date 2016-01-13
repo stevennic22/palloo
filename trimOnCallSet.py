@@ -105,7 +105,7 @@ def selFunc(phone,cEmail):
 
 	#Assigns driver to Firefox or Chrome (chromedriver must be installed in a folder specified on the path)
 	#Firefox does not require an external application to function and works by default with Selenium installed
-	global driver 
+	global driver
 	driver = webdriver.Firefox()
 
 	driver.get("https://secure1.halloo.com/sign-in/")
@@ -178,6 +178,7 @@ def main(argv):
 		transferFile.write("Not a valid cellular service at this time")
 		transferFile.close()
 		sys.exit(2)
-	selFunc(phoneNum, cellConvert)
+	else:
+		selFunc(phoneNum, cellConvert)
 if __name__ == '__main__':
     main(sys.argv[1:])

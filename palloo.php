@@ -176,16 +176,21 @@ function setUser($userToSet, $rType) {
 		set_time_limit(360);
 		shell_exec("trimOnCallCheck.py");
 		$transferfilename = "Ext/phptransfer";
-		$pyCapture = fopen($transferfilename, "r");
-		while(!feof($pyCapture)){
-				$transferFileInfo[] = fgets($pyCapture);
-		}
-		fclose($pyCapture);
-		unlink($transferfilename);
-		$pyOutput = stripper($transferFileInfo[0]);
 		
-		if ($pyOutput == "Error logging in to Halloo") {
-			return $pyOutput;
+		if(file_exists($transferfilename)) {
+			$pyCapture = fopen($transferfilename, "r");
+			while(!feof($pyCapture)){
+					$transferFileInfo[] = fgets($pyCapture);
+			}
+			fclose($pyCapture);
+			unlink($transferfilename);
+			$pyOutput = stripper($transferFileInfo[0]);
+			
+			if ($pyOutput == "Error logging in to Halloo" || $pyOutput == "Not a valid cellular service at this time") {
+				return $pyOutput;
+			}
+		} else {
+			return "Error running script.";
 		}
 		
 		if ($pyOutput == stripper($line[1])) {
@@ -221,9 +226,9 @@ function setUser($userToSet, $rType) {
 		} else {
 			set_time_limit(360);
 			$command = escapeshellcmd('trimOnCallSet.py -s ');
-			$setService = escapeshellcmd($line[3]);
+			$setService = strtolower(escapeshellcmd(str_replace(array("&","\n","\r","-"," "), '', $line[3])));
 			$setVars = escapeshellcmd($line[1]);
-			shell_exec($command . '"' . $setService . '" -p ' . $setVars);
+			shell_exec($command . '"' . $setService . '" -p "' . $setVars . '"');
 			
 			//Open On Call file and get all information
 			$ocfilename = "Ext/oncall";
@@ -267,18 +272,22 @@ function checkUser($rType){
 	set_time_limit(360);
 	shell_exec("trimOnCallCheck.py");
 	$transferfilename = "Ext/phptransfer";
-	$pyCapture = fopen($transferfilename, "r");
-	while(!feof($pyCapture)){
-			$transferFileInfo[] = fgets($pyCapture);
-	}
-	fclose($pyCapture);
-	$pyOutput = stripper($transferFileInfo[0]);
-	unlink($transferfilename);
-		
-	if ($pyCapture == "Error logging in to Halloo" || $pyCapture == "Not a valid cellular service at this time") {
-		return $pyCapture;
-	}
 	
+	if(file_exists($transferfilename)) {
+		$pyCapture = fopen($transferfilename, "r");
+		while(!feof($pyCapture)){
+				$transferFileInfo[] = fgets($pyCapture);
+		}
+		fclose($pyCapture);
+		$pyOutput = stripper($transferFileInfo[0]);
+		unlink($transferfilename);
+			
+		if ($pyCapture == "Error logging in to Halloo" || $pyCapture == "Not a valid cellular service at this time") {
+			return $pyCapture;
+		}
+	} else {
+		return "Error running script.";
+	}
 	//Open On Call file and get all information
 	$ocfilename = "Ext/oncall";
 	//$ocFileInfo[] = substr($ocfilename,4);
@@ -511,7 +520,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 					$OCUser = checkUser(1);
 					
 					if (is_String($OCUser)) {
-						if ($OCUser == "Error logging in to Halloo") {
+						if ($OCUser == "Error logging in to Halloo" || $OCUser == "Not a valid cellular service at this time") {
 							echo "<div class='main' style='text-align: center;'>There was an error while checking the onCall user. Please contact the administrator.</div>";
 						} else {
 							echo "<div class='main' style='text-align: center;'>" . $OCUser . "</div>";
@@ -525,7 +534,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 						$setVars = input_cleanse(strtolower($_GET["name"]));
 						$funcUpdate = setUser($setVars, 1);
 						if (is_String($funcUpdate)) {
-							if ($OCUser == "Error logging in to Halloo" || $OCUser == "Not a valid cellular service at this time") {
+							if ($funcUpdate == "Error logging in to Halloo" || $funcUpdate == "Not a valid cellular service at this time" || $funcUpdate == "Error running script.") {
 								echo "<div class='main' style='text-align: center;'>There was an error while setting the onCall user. Please contact the administrator.</div>";
 							} else {
 								echo "<div class='main' style='text-align: center;'>" . $funcUpdate . "</div>";
