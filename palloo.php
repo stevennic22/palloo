@@ -47,7 +47,7 @@ echo "</title><style>.main {margin: auto;
 		//margin-left: auto;
 		//margin-right: auto;
 		//width: 90%;
-		text-align: center;}</style></head></html>";
+		text-align: center;}</style></head><body>";
 /*
 echo "</title><style>.main {margin: 20px 0;
 		//margin-left: auto;
@@ -490,10 +490,10 @@ function getAlertVars($from) {
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
 	if (count($_GET) == 0 || isset($_GET["help"])){
-		echo "<div style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
+		echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
 	} else if (isset($_GET["process"])) {
 		if(strtolower($_GET["process"]) == "help"){
-			echo "<div style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
+			echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
 		} else if (isset($_GET["process"])) {
 			$procVar = input_cleanse(strtolower($_GET["process"]));
 			switch($procVar){
@@ -501,9 +501,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 					$OCUser = checkUser(1);
 					
 					if (is_String($OCUser)) {
-						echo "<div style='text-align: center;'>" . $OCUser . "</div>";
+						echo "<div class='main' style='text-align: center;'>" . $OCUser . "</div>";
 					} else {
-						echo "<div style='text-align: center;'>Unknown return type.</div>";
+						echo "<div class='main' style='text-align: center;'>Unknown return type.</div>";
 					}
 					break;
 				case "set":
@@ -511,12 +511,12 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 						$setVars = input_cleanse(strtolower($_GET["name"]));
 						$funcUpdate = setUser($setVars, 1);
 						if (is_String($funcUpdate)) {
-							echo "<div style='text-align: center;'>" . $funcUpdate . "</div>";
+							echo "<div class='main' style='text-align: center;'>" . $funcUpdate . "</div>";
 						} else {
-							echo "<div style='text-align: center;'>Unknown return type.</div>";
+							echo "<div class='main' style='text-align: center;'>Unknown return type.</div>";
 						}
 					} else {
-						echo "<div style='text-align: center;'>Please provide a valid name.</div>";
+						echo "<div class='main' style='text-align: center;'>Please provide a valid name.</div>";
 					}
 					break;
 				case "alert":
@@ -534,7 +534,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 					}
 					//echo $alertVars[0];
 					for($i=0;$i < count($alertVars);$i++){
-						echo "<div style='text-align: center;'>" . $alertVars[$i] . "</div>";
+						if ($i == 0){
+							echo "<div class='main' style='text-align: center;'>Title: " . $alertVars[$i] . "</div>";
+						} else if ($i == 1){
+							echo "<div class='main' style='text-align: center;'>Message: " . $alertVars[$i] . "</div>";
+						} else {
+							echo "<div class='main' style='text-align: center;'>" . $alertVars[$i] . "</div>";
+						}
 					}
 					break;
 				case "auto":
@@ -560,7 +566,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 					//If response from setting is a string and it isn't yelling about a bad name, finishing rotating in rotation file
 					if ($funcUpdate != $OCUser) {
 						//If the response from setting the value is yelling about a bad name, this happens.
-						echo "<div style='text-align: center;'>There was an error and something didn't update. Please try again.</div>";
+						echo "<div class='main' style='text-align: center;'>There was an error and something didn't update. Please try again.</div>";
 						//Should probably send notification...
 					} else {
 						//Grab first name from list
@@ -585,12 +591,12 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 							}
 						}
 						fclose($autonext);
-						echo "<div style='text-align: center;width:50vw;'>The next user in the rotation (" . $autoFileInfo[0] .") has been set.</div>";
+						echo "<div class='main' style='text-align: center;'>The next user in the rotation (" . $autoFileInfo[0] .") has been set.</div>";
 					}
 					break;
 			}
 		} else {
-			echo "<div style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
+			echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
 		}
 	}
 }
