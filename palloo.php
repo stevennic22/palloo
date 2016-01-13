@@ -1,6 +1,8 @@
 <?php
 //TO DO: In trimOnCallSet & trimOnCallCheck, if script errors out and can't log in, mark that in the PHP Transfer file. Also triple check home copies of all files.
-
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
 echo "<!DOCTYPE html><html><head>";
 echo '<link rel="shortcut icon" type="image/x-icon" href="https://nealv4test.sleepex.com/favicon.ico" />';
 //echo '<link rel="shortcut icon" type="image/x-icon" href="http://uptimerobot.com/assets/ico/favicon.ico" />';
@@ -182,6 +184,10 @@ function setUser($userToSet, $rType) {
 		unlink($transferfilename);
 		$pyOutput = stripper($transferFileInfo[0]);
 		
+		if ($pyOutput == "Error logging in to Halloo") {
+			return $pyOutput;
+		}
+		
 		if ($pyOutput == stripper($line[1])) {
 			//Open On Call file and get all information
 			$ocfilename = "Ext/oncall";
@@ -268,6 +274,10 @@ function checkUser($rType){
 	fclose($pyCapture);
 	$pyOutput = stripper($transferFileInfo[0]);
 	unlink($transferfilename);
+		
+	if ($pyCapture == "Error logging in to Halloo" || $pyCapture == "Not a valid cellular service at this time") {
+		return $pyCapture;
+	}
 	
 	//Open On Call file and get all information
 	$ocfilename = "Ext/oncall";
@@ -501,7 +511,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 					$OCUser = checkUser(1);
 					
 					if (is_String($OCUser)) {
-						echo "<div class='main' style='text-align: center;'>" . $OCUser . "</div>";
+						if ($OCUser == "Error logging in to Halloo") {
+							echo "<div class='main' style='text-align: center;'>There was an error while checking the onCall user. Please contact the administrator.</div>";
+						} else {
+							echo "<div class='main' style='text-align: center;'>" . $OCUser . "</div>";
+						}
 					} else {
 						echo "<div class='main' style='text-align: center;'>Unknown return type.</div>";
 					}
@@ -511,7 +525,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 						$setVars = input_cleanse(strtolower($_GET["name"]));
 						$funcUpdate = setUser($setVars, 1);
 						if (is_String($funcUpdate)) {
-							echo "<div class='main' style='text-align: center;'>" . $funcUpdate . "</div>";
+							if ($OCUser == "Error logging in to Halloo" || $OCUser == "Not a valid cellular service at this time") {
+								echo "<div class='main' style='text-align: center;'>There was an error while setting the onCall user. Please contact the administrator.</div>";
+							} else {
+								echo "<div class='main' style='text-align: center;'>" . $funcUpdate . "</div>";
+							}
 						} else {
 							echo "<div class='main' style='text-align: center;'>Unknown return type.</div>";
 						}

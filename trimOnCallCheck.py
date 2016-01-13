@@ -16,8 +16,16 @@ def main():
 
 	#Loads Halloo login page (to ensure you actually log in)
 	driver.get("https://secure1.halloo.com/sign-in/")
-	if driver.title == "":
+	count = 0
+	while (count < 5 and driver.title == ""):
+		driver.refresh()
+		count += 1
+	if (driver.title == ""):
 		driver.quit()
+		phpTransferFile = "Ext\phptransfer"
+		transferFile = open(phpTransferFile,"w+")
+		transferFile.write("Error logging in to Halloo")
+		transferFile.close()
 		exit()
 	else:
 		#print driver.title
@@ -46,15 +54,20 @@ def main():
 		#print driver.title
 		if "Sign-In" in driver.title:
 			#Exits if statement because login failed to Halloo
-			#print "Login to Halloo failed. Check login information" + "<br>"
+			#print "Login to Halloo failed. Check login information"
 			#Quits selenium driver
+			phpTransferFile = "Ext\phptransfer"
+			transferFile = open(phpTransferFile,"w+")
+			transferFile.write("Error logging in to Halloo")
+			transferFile.close()
 			driver.quit()
+			exit()
 		else:
 			#Loads onCallExt from above
 			driver.get(onCallExt)
 			
 			#Prints OnCall first and last name to confirm information
-			#print ("Forwarding information for extension: " + driver.find_element_by_name("firstname").get_attribute("value") + " " + driver.find_element_by_name("lastname").get_attribute("value")) + "<br>"
+			#print ("Forwarding information for extension: " + driver.find_element_by_name("firstname").get_attribute("value") + " " + driver.find_element_by_name("lastname").get_attribute("value"))
 			#Captures forwarding extensions to array for safekeeping
 			arrayList = driver.find_elements_by_xpath("//*[contains(@name, 'fwd_')]")
 			#print arrayList[2].get_attribute("value").rstrip()

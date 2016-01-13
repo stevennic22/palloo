@@ -40,23 +40,22 @@ class switch(object):
             return False
 
 def errPrint():
-	print '-h, --help<br>'
-	print '		prints this help command<br><br>'
-	print '-p, --phone=<br>'
-	print '		input phone number to change phones to<br><br>'
-	print '-s, --service=<br>'
-	print '		input cell service to change text notifications for voicemails<br><br>'
+	print '-h, --help'
+	print '		prints this help command'
+	print '-p, --phone='
+	print '		input phone number to change phones to'
+	print '-s, --service='
+	print '		input cell service to change text notifications for voicemails'
 
 def printExt():
 	#Loops through extension fields on currently open page to print current phone numbers for Home, Office, and Mobile
 	for i, w in enumerate(driver.find_elements_by_xpath("//*[contains(@name, 'fwd_')]")):
 		if i == 0:
-			sys.stdout.write("H: " + w.get_attribute("value") + "<br>")
+			sys.stdout.write("H: " + w.get_attribute("value"))
 		elif i == 1:
-			sys.stdout.write("O: " + w.get_attribute("value") + "<br>")
+			sys.stdout.write("O: " + w.get_attribute("value"))
 		else:
-			sys.stdout.write("M: " + w.get_attribute("value") + "<br>")
-			sys.stdout.write("" + "<br>")
+			sys.stdout.write("M: " + w.get_attribute("value"))
 			
 def setExt(numToSet):
 	#Takes input of Phone Number, clears current extension fields, sets new extension from input, and submits
@@ -110,8 +109,17 @@ def selFunc(phone,cEmail):
 	driver = webdriver.Firefox()
 
 	driver.get("https://secure1.halloo.com/sign-in/")
-	if driver.title == "":
+	count = 0
+	while (count < 5 and driver.title == ""):
+		driver.refresh()
+		count += 1
+	if (driver.title == ""):
 		driver.quit()
+		phpTransferFile = "Ext\phptransfer"
+		transferFile = open(phpTransferFile,"w+")
+		transferFile.write("Error logging in to Halloo")
+		transferFile.close()
+		exit()
 	else:
 		#Login fields for Halloo. Can use just email and password.
 		#If email not given, ucomp must be sleepex
@@ -165,7 +173,10 @@ def main(argv):
 	
 	cellConvert = cellularConvert(phoneNum, cellService)
 	if cellConvert == "Not a valid cellular service at this time":
-		print "There was an error setting the phone number"
+		phpTransferFile = "Ext\phptransfer"
+		transferFile = open(phpTransferFile,"w+")
+		transferFile.write("Not a valid cellular service at this time")
+		transferFile.close()
 		sys.exit(2)
 	selFunc(phoneNum, cellConvert)
 if __name__ == '__main__':
