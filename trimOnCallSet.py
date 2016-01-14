@@ -74,21 +74,18 @@ def setCEmail(serviceEmail):
 
 def cellularConvert(aNumber, cProvider):
 	aNumber = aNumber[1:]
+	aNumber = aNumber[1:].replace("-","")
 	for case in switch(cProvider):
 		if case('att'):
-			aNumber = aNumber[1:].replace("-","")
 			aNumber = aNumber + "@txt.att.net"
 			return aNumber
 		if case('sprint'):
-			aNumber = aNumber.replace("-","")
 			aNumber = aNumber + "@messaging.sprintpcs.com"
 			return aNumber
 		if case('verizon'):
-			aNumber = aNumber.replace("-","")
 			aNumber = aNumber + "@vtext.com"
 			return aNumber
 		if case('tmobile'):
-			aNumber = aNumber.replace("-","")
 			aNumber = aNumber + "@tmomail.net"
 			return aNumber
 		if case(): # default, could also just omit condition or 'if True'
@@ -168,6 +165,7 @@ def main(argv):
 			sys.exit(2)
 		elif opt in ("-s", "--service"):
 			cellService = arg;
+			cellService = cellService.replace("^","")
 		elif opt in ("-p", "--phone"):
 			phoneNum = arg;
 	
