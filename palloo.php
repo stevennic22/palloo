@@ -226,8 +226,8 @@ function setUser($userToSet, $rType) {
 		} else {
 			set_time_limit(360);
 			$command = escapeshellcmd('trimOnCallSet.py -s ');
-			$setService = strtolower(str_replace(array("&","\n","\r","-"," "), '', $line[3]));
-			$setVars = $line[1];
+			$setService = strtolower(escapeshellcmd(str_replace(array("&","\n","\r","-"," "), '', $line[3])));
+			$setVars = escapeshellcmd(stripper($line[1]));
 			shell_exec($command . '"' . $setService . '" -p "' . $setVars . '"');
 			
 			//Open On Call file and get all information

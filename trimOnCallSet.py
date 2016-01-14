@@ -74,7 +74,7 @@ def setCEmail(serviceEmail):
 
 def cellularConvert(aNumber, cProvider):
 	aNumber = aNumber[1:]
-	aNumber = aNumber[1:].replace("-","")
+	aNumber = aNumber.replace("-","")
 	for case in switch(cProvider):
 		if case('att'):
 			aNumber = aNumber + "@txt.att.net"
@@ -165,7 +165,6 @@ def main(argv):
 			sys.exit(2)
 		elif opt in ("-s", "--service"):
 			cellService = arg;
-			cellService = cellService.replace("^","")
 		elif opt in ("-p", "--phone"):
 			phoneNum = arg;
 	
