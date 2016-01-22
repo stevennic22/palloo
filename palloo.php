@@ -226,7 +226,11 @@ function setUser($userToSet, $rType) {
 		} else {
 			set_time_limit(360);
 			$command = escapeshellcmd('trimOnCallSet.py -s ');
-			$setService = strtolower(escapeshellcmd(str_replace(array("&","\n","\r","-"," "), '', $line[3])));
+			if (str_replace(array("\n","\r"), '', $line[3]) == "Google Fi") {
+				$setService = strtolower(escapeshellcmd(stripper($line[2])));
+			} else {
+				$setService = strtolower(escapeshellcmd(str_replace(array("&","\n","\r","-"," "), '', $line[3])));
+			}
 			$setVars = escapeshellcmd(stripper($line[1]));
 			shell_exec($command . '"' . $setService . '" -p "' . $setVars . '"');
 			
@@ -288,6 +292,7 @@ function checkUser($rType){
 	} else {
 		return "Error running script.";
 	}
+	
 	//Open On Call file and get all information
 	$ocfilename = "Ext/oncall";
 	//$ocFileInfo[] = substr($ocfilename,4);
@@ -386,7 +391,11 @@ function getAlertVars($from) {
 				pushOver(stripper($file[5]), $comVars[0], $comVars[1]);
 				break;
 			case strtolower("SMS"):
-				sendText($file[3], stripper($file[1]), $comVars[0], $comVars[1]);
+				if($file[3] != 'Google Fi') {
+					sendText($file[3], stripper($file[1]), $comVars[0], $comVars[1]);
+				} else {
+					sendAnEmail(stripper($file[2]), $comVars[0], $comVars[1]);
+				}
 				break;
 			case "pushbullet":
 				if (isset($file[5])) {

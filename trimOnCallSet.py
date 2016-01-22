@@ -73,6 +73,8 @@ def setCEmail(serviceEmail):
 	driver.find_element_by_id("cMemail").submit()
 
 def cellularConvert(aNumber, cProvider):
+	if('@' in cProvider):
+		return cProvider
 	aNumber = aNumber[1:]
 	aNumber = aNumber.replace("-","")
 	for case in switch(cProvider):
