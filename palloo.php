@@ -136,6 +136,12 @@ function sendText($service, $number, $title, $msg) {
 			$execution = str_replace(array("'"), '"', $execution);
 			shell_exec($execution);
 			break;
+		case "google fi":
+			$to = $number . "@msg.fi.google.com";
+			$execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
+			$execution = str_replace(array("'"), '"', $execution);
+			shell_exec($execution);
+			break;
 	}
 	return;
 }
@@ -391,11 +397,7 @@ function getAlertVars($from) {
 				pushOver(stripper($file[5]), $comVars[0], $comVars[1]);
 				break;
 			case strtolower("SMS"):
-				if($file[3] != 'Google Fi') {
-					sendText($file[3], stripper($file[1]), $comVars[0], $comVars[1]);
-				} else {
-					sendAnEmail(stripper($file[2]), $comVars[0], $comVars[1]);
-				}
+				sendText($file[3], stripper($file[1]), $comVars[0], $comVars[1]);
 				break;
 			case "pushbullet":
 				if (isset($file[5])) {
