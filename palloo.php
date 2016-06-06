@@ -583,18 +583,24 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 					break;
 				case "auto":
 					//Gather information from rotation file
-					$autofilename = "Ext/rotation";
-					$autoNext = fopen($autofilename, "r");
-					while(!feof($autoNext)){
-							$autoFileInfo[] = stripper(fgets($autoNext));
+					shell_exec("cal.py");
+					$transferfilename = "Ext/phptransfer";
+					
+					if(file_exists($transferfilename)) {
+						$pyCapture = fopen($transferfilename, "r");
+						while(!feof($pyCapture)){
+								$transferFileInfo[] = fgets($pyCapture);
+						}
+						fclose($pyCapture);
+						$pyOutput = stripper($transferFileInfo[0]);
+						unlink($transferfilename);
+					} else {
+						echo "<div class='main' style='text-align: center;'>There was an error gathering on call username. Please try again.</div>";
+						break;
 					}
-					fclose($autoNext);
-					unset($autoNext);
-					//var_dump($autoFileInfo);
-					//echo "<br />";
 					
 					//Get ready to call setUser() function
-					$setVars = input_cleanse(strtolower($autoFileInfo[1]));
+					$setVars = input_cleanse(strtolower($pyOutput));
 					$funcUpdate = setUser($setVars,0);
 					
 					//Once setting is over, check result
@@ -607,29 +613,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 						echo "<div class='main' style='text-align: center;'>There was an error and something didn't update. Please try again.</div>";
 						//Should probably send notification...
 					} else {
-						//Grab first name from list
-						$userSwap = $autoFileInfo[0];
-						//Removes first value in array
-						unset($autoFileInfo[0]);
-						//Moves array to new array (with same name) to reset numbering
-						$autoFileInfo = array_values($autoFileInfo);
-						//Puts user that was originally at the top at the bottom
-						array_push($autoFileInfo, $userSwap);
-						//var_dump($autoFileInfo);
-						
-						//Opens rotation file
-						$autonext = fopen($autofilename, "w");
-						
-						//Loops through array, adding each to a line of the rotation file
-						for($i=0;$i <= count($autoFileInfo) - 1;$i++){
-							if($i != count($autoFileInfo) - 1) {
-								fwrite($autonext, $autoFileInfo[$i] . "\r\n");
-							} else {
-								fwrite($autonext, $autoFileInfo[$i]);
-							}
-						}
-						fclose($autonext);
-						echo "<div class='main' style='text-align: center;'>The next user in the rotation (" . $autoFileInfo[0] .") has been set.</div>";
+						echo "<div class='main' style='text-align: center;'>The next user in the rotation (" . $pyOutput .") has been set.</div>";
 					}
 					break;
 			}
