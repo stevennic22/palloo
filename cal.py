@@ -68,6 +68,7 @@ def theMainEvent(listOfEvents,events):
 
 def get_credentials():
 	home_dir = os.path.expanduser('~')
+	#Update following line to point it to actual working folder
 	credential_dir = os.path.normpath("/home/steven/Desktop")
 	if not os.path.exists(credential_dir):
 		os.makedirs(credential_dir)
@@ -101,7 +102,6 @@ def main():
 	service = discovery.build('calendar', 'v3', http=http)
 
 	now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-	#print('Getting some events')
 	eventsResult = service.events().list(
         calendarId='support@sleepex.com', timeMin=now, maxResults=10, singleEvents=True,
 		orderBy='startTime').execute()
@@ -117,27 +117,14 @@ def main():
 			datum = time.strftime("%Y-%m-%d")
 			start = event['start'].get('dateTime', event['start'].get('date'))
 			if(('on-call' in string.lower(event['summary']) or 'on call' in string.lower(event['summary'])) and (start <= datum)):
-				#print(start, event['summary'])
-				#if('taking' in string.lower(event['summary']) or 'for' in string.lower(event['summary']) or 'shift' in string.lower(event['summary'])):
 				eventList[string.lower(event["summary"])] = [start,False]
 				eventNum += 1
-					#global finalEvent
-					#finalEvent = copy.deepcopy(event)
-			#if(datum in start):
-				#print("same")
-			#elif(start < datum):
-				#print("oooold")
-		#print(eventNum)
 		finalEvent = theMainEvent(eventList,eventNum)
 		print(finalEvent)
 		phpTransferFile = "Ext/phptransfer"
 		transferFile = open(phpTransferFile,"w+")
 		transferFile.write(finalEvent)
 		transferFile.close()
-
-		##print(finalEvent['summary'])
-		##retName = findName(finalEvent['summary'])
-		#retName = findName("Kareem Taking Amy's On-Call")
 		
 if __name__ == '__main__':
 	main()
