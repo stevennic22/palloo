@@ -1,6 +1,11 @@
-#!C:/Python27/python.exe
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import os, re, string, sys, getopt, struct, socket, smtplib
+import os, sys, getopt, smtplib, logging, datetime
+
+if(os.path.isdir("LOGS") == False):
+	os.makedirs("LOGS")
+logFileName = os.path.normpath("LOGS\sendMail") + datetime.datetime.now().strftime("%d%m%y%H%M%S") + ".LOG"
+logging.basicConfig(format='%(levelname)s: %(message)s', filename=logFileName,level=logging.INFO)
 
 msgSetup = ["","",""]
 
@@ -10,6 +15,7 @@ def errPrint():
 	
 def arrayAddition(arg,i):
 	global msgSetup
+  logging.info("Adding " + arg + " to the list.")
 	msgSetup[i]=arg
 	return
 
@@ -22,6 +28,7 @@ def sendingMail():
 	# me == the sender's email address
 	# you == the recipient's email address
 	if msgSetup[2] == "":
+    logging.warning("No title included. Inserting text 'No Subject' instead.")
 		msg['Subject'] = "No Subject"
 	else:
 		msg['Subject'] = msgSetup[2]
@@ -35,21 +42,26 @@ def sendingMail():
 	s.login(msg['From'], "") #Put application specific password
 	s.sendmail(msg['From'], msg['To'], msg.as_string())
 	s.quit()
+  logging.info("Email sent.")
 	
 def main(argv):
 	global msgSetup
+  logging.info("Starting to parse arguments")
 	try:
 		opts, args = getopt.getopt(argv,"hr:m:t:", ["help", "recipient=", "msg=", "title="])
 		if not opts:
 			# Return proper usage of script if in error
+      logging.warning("No arguments provided. Printing help message and closing.")
 			errPrint()
 	except getopt.GetoptError:
 		# Return proper usage of script if in error
+    logging.warning("No arguments provided. Printing help message and closing.")
 		errPrint()
 		sys.exit(2)
 	for opt, arg in opts:
 		if opt in ("-h", "--help"):
 			# Return proper usage of script if in error
+      logging.info("Help message requested. Printing help message and closing.")
 			errPrint()
 			sys.exit(2)
 		elif opt in ("-r", "--recipient"):
@@ -59,6 +71,7 @@ def main(argv):
 		elif opt in ("-t", "--title"):
 			arrayAddition(arg,2)
 
+  logging.info("Attempting to send email.")
 	sendingMail()
 	
 if __name__ == '__main__':

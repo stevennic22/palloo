@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import httplib2, os, string, time, copy, logging, datetime
+import httplib2, os, string, logging, datetime
 
 from apiclient import discovery
 import oauth2client
@@ -49,7 +49,7 @@ def theMainEvent(listOfEvents,events):
 		if(count == 0):
 			eventDates = []
 			counter = 0
-			todaysDate = time.strftime("%Y-%m-%d")
+			todaysDate = datetime.datetime.now().strftime("%Y-%m-%d")
 			for event,val in listOfEvents.iteritems():
 				eventDates[counter] = val[0]
 				counter +=1
@@ -114,7 +114,7 @@ def main():
 		eventList = {}
 		eventNum = 0
 		for event in events:
-			datum = time.strftime("%Y-%m-%d")
+			datum = datetime.datetime.now().strftime("%Y-%m-%d")
 			start = event['start'].get('dateTime', event['start'].get('date'))
 			if(('on-call' in string.lower(event['summary']) or 'on call' in string.lower(event['summary'])) and (start <= datum)):
 				eventList[string.lower(event["summary"])] = [start,False]
