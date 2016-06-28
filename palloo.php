@@ -615,7 +615,6 @@ function getAlertVars($from,$to,$passedTitle = False,$passedMsg = False) {
 	//If method is pushbullet - 5 would be personal user email address (if blank, use work email)
 	
 	function alertOutput($file,$comVars) {
-    echo(strtolower(stripper($file[4])));
 		switch(strtolower(stripper($file[4]))){
 			case "pushover":
 				pushOver(stripper($file[5]), $comVars[0], $comVars[1]);
@@ -774,13 +773,6 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 					}
 					break;
 				case "alert":
-					//Get information from URL
-					//Find On Call information (from file)
-					//If Neal
-					//	Use preferred contact method to alert
-					//If not Neal
-					//	Contact Neal through preferred method
-					//	Contact On Call user through preferred method
 					if (isset($_GET["from"]) && $_GET["from"]=="uptime") {
 						$alertVars = getAlertVars(1);
 					} else if (isset($_GET["name"])){
