@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import httplib2, os, string, time, copy
+import httplib2, os, string, time, copy, logging, datetime
 
 from apiclient import discovery
 import oauth2client
 from oauth2client import client
 from oauth2client import tools
 
-import datetime
+if(os.path.isdir("LOGS") == False):
+	os.makedirs("LOGS")
+logFileName = os.path.normpath("LOGS\CalChecking") + datetime.datetime.now().strftime("%d%m%y%H%M%S") + ".LOG"
+logging.basicConfig(format='%(levelname)s: %(message)s', filename=logFileName,level=logging.INFO)
 
 try:
 	import argparse
@@ -36,7 +39,7 @@ def theMainEvent(listOfEvents,events):
 			return(onCallInEvent)
 	elif(events == 2):
 		for event,val in listOfEvents.iteritems():
-			if('taking' in event or 'for' in event or 'shift' in event):
+			if('taking' in event or 'for' in event or 'shift' in event or 'covering' in event):
 				val[1] = True
 		count = 0
 		for event,val in listOfEvents.iteritems():
@@ -64,15 +67,11 @@ def theMainEvent(listOfEvents,events):
 					onCallInEvent = findName(event)
 					return(onCallInEvent)
 	else:
+		logging.warning(events)
 		return("Well... Do something 3")
 
 def get_credentials():
-	home_dir = os.path.expanduser('~')
-	#Update following line to point it to actual working folder
-	credential_dir = os.path.normpath("/home/steven/Desktop")
-	if not os.path.exists(credential_dir):
-		os.makedirs(credential_dir)
-	credential_path = os.path.join(credential_dir,'calendar-python-quickstart.json')
+	credential_path = 'calendar-python-quickstart.json'
 
 	store = oauth2client.file.Storage(credential_path)
 	credentials = store.get()
@@ -83,7 +82,7 @@ def get_credentials():
 			credentials = tools.run_flow(flow, store, flags)
 		else: # Needed only for compatibility with Python 2.6
 			credentials = tools.run(flow, store)
-		print('Storing credentials to ' + credential_path)
+		logging.warning('Storing credentials to ' + credential_path)
 	return credentials
 
 def main():
@@ -102,13 +101,14 @@ def main():
 	service = discovery.build('calendar', 'v3', http=http)
 
 	now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
+	#logging.info('Getting some events')
 	eventsResult = service.events().list(
         calendarId='support@sleepex.com', timeMin=now, maxResults=10, singleEvents=True,
 		orderBy='startTime').execute()
 	events = eventsResult.get('items', [])
 
 	if not events:
-		print('No upcoming events found.')
+		logging.warning('No upcoming events found.')
 	else:
 		finalEvent = None
 		eventList = {}
@@ -120,8 +120,8 @@ def main():
 				eventList[string.lower(event["summary"])] = [start,False]
 				eventNum += 1
 		finalEvent = theMainEvent(eventList,eventNum)
-		print(finalEvent)
-		phpTransferFile = "Ext/phptransfer"
+		logging.info(finalEvent)
+		phpTransferFile = os.path.normpath("Ext\phptransfer")
 		transferFile = open(phpTransferFile,"w+")
 		transferFile.write(finalEvent)
 		transferFile.close()
