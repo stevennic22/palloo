@@ -37,12 +37,14 @@ def sendingMail():
     msg['Subject'] = "No Subject"
   else:
     msg['Subject'] = msgSetup[2]
+  msg['From'] = "" #Put from email address
   msg['To'] = msgSetup[1]
 
   # Send the message via our own SMTP server, but don't include the
   # envelope header.
   s = smtplib.SMTP('smtp.gmail.com', 587)
   s.starttls()
+  s.login(msg['From'], "") #Put application specific password
   s.sendmail(msg['From'], msg['To'], msg.as_string())
   s.quit()
   logging.info("Email sent.")
