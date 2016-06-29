@@ -9,7 +9,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 if(os.path.isdir("LOGS") == False):
 	os.makedirs("LOGS")
-logFileName = os.path.normpath("LOGS\CalChecking") + datetime.datetime.now().strftime("%d%m%y%H%M%S") + ".LOG"
+logFileName = os.path.normpath("LOGS\AvailSwapping") + datetime.datetime.now().strftime("%d%m%y%H%M%S") + ".LOG"
 logging.basicConfig(format='%(levelname)s: %(message)s', filename=logFileName,level=logging.INFO)
 
 def main():
