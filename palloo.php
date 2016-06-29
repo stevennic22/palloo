@@ -737,17 +737,17 @@ function getAlertVars($from,$to,$passedTitle = False,$passedMsg = False) {
 
 function availabilityToggling($togVal=true) {
   $headers = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
-	$fields = array("ucomp" => 'INSERT EMAIL ADDRESS HERE',"upass" => 'INSERT PASSWORD HERE',"submit" => 'Sign-In');
+  $fields = array("ucomp" => 'INSERT EMAIL ADDRESS HERE',"upass" => 'INSERT PASSWORD HERE',"submit" => 'Sign-In');
 
 	curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
-	$result = curl_exec($ch);
+  $result = curl_exec($ch);
   
-	if($togVal === true || $togVal == "on") {
+  if($togVal === true || $togVal == "on") {
     $togVal = "AVAIL";
   } else {
     $togVal = "UNAVAIL";
   }
-	curl_reset($ch);
+  curl_reset($ch);
   $data = "_METHOD=PUT&qstatus=".$togVal;
   $availHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
   	
