@@ -3,7 +3,12 @@
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
-define("COOKIE_FILE", "cookie.txt");
+define('COOKIE_FILE', 'cookie.txt');
+define('USERNAME', '');
+define('PASSWORD', '');
+define('USER_AGENT', 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36');
+define('PUSHOVER_API_TOKEN','');
+define('PUSHBULLET_API_TOKEN','');
 echo "<!DOCTYPE html><html><head>";
 echo '<link rel="shortcut icon" type="image/x-icon" href="https://stevenv4test.sleepex.com/favicon.ico" />';
 echo "<title>";
@@ -65,7 +70,7 @@ function pushOver($user, $title, $msg) {
   curl_setopt_array($ch = curl_init(), array(
     CURLOPT_URL => "https://api.pushover.net/1/messages.json",
     CURLOPT_POSTFIELDS => array(
-      "token" => "", //your application token here
+      "token" => PUSHOVER_API_TOKEN,
       "user" => $user,
       "title" => $title,
       "message" => $msg,
@@ -82,9 +87,8 @@ function pushOver($user, $title, $msg) {
 function pushBullet($email, $title, $msg) {
   curl_setopt_array($ch = curl_init(), array(
     CURLOPT_URL => 'https://api.pushbullet.com/v2/pushes',
-    CURLOPT_HTTPHEADER  => array('Authorization: Bearer '), //Add your token here
+    CURLOPT_HTTPHEADER  => array('Authorization: Bearer '. PUSHBULLET_API_TOKEN),
     CURLOPT_POSTFIELDS => array(
-      //Use email to send it to another PushBullet user
       "email" => $email,
       "type" => "note",
       "title" => $title,
@@ -147,18 +151,18 @@ function sendAnEmail($to, $title, $msg) {
 }
 
 function swappa($line) {
-  $headers = array("Host" => "my.halloo.com","Origin" => "https://my.halloo.com","User-Agent" => "Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language" => "en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection" => "keep-alive","Content-Type" => "application/x-www-form-urlencoded","Cache-Control" => "no-cache");
+  $headers = array("Host" => "my.halloo.com","Origin" => "https://my.halloo.com","User-Agent" => USER_AGENT,"Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language" => "en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection" => "keep-alive","Content-Type" => "application/x-www-form-urlencoded","Cache-Control" => "no-cache");
 
-  $fields = array("ucomp" => 'INSERT EMAIL ADDRESS HERE',"upass" => 'INSERT PASSWORD HERE',"submit" => 'Sign-In');
+  $fields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In');
 
-  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
   $result = curl_exec($ch);
   
   curl_reset($ch);
-  $headers = array("Host" => "my.halloo.com","User-Agent" => "Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language" => "en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection" => "keep-alive","Cache-Control" => "no-cache");
-  $myFirstURL = 'http://my.halloo.com/console/miniproxy?method=setForward&forward='.$line;
+  $headers = array("Host" => "my.halloo.com","User-Agent" => USER_AGENT,"Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language" => "en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection" => "keep-alive","Cache-Control" => "no-cache");
+  $myFirstURL = 'http://my.halloo.com/console/miniproxy?method=setForward&forward=' . $line;
   
-  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => $myFirstURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => $myFirstURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
   
   $result = curl_exec($ch);
   
@@ -327,18 +331,18 @@ function setUser($userToSet, $rType) {
     $TSForwardingURL = "http://my.halloo.com/ext/?view=User%20Settings&extn=TSEmergency&tab=Forwarding";
     $TSGeneralURL = "http://my.halloo.com/ext/?view=User%20Settings&extn=TSEmergency&tab=General";
     
-    $signinHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
-    $getterHeaders = array("Host: my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
-    $loginFields = array("ucomp" => 'INSERT EMAIL ADDRESS HERE',"upass" => 'INSERT PASSWORD HERE',"submit" => 'Sign-In');
+    $signinHeaders = array('Host' => 'my.halloo.com','Origin' => 'https://my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => 'application/x-www-form-urlencoded','Cache-Control' => 'no-cache');
+    $getterHeaders = array('Host' => 'my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Cache-Control' => 'no-cache');
+    $loginFields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In');
     
     //Sign-In Post set up and requested
-    curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$loginFields["ucomp"].'&upass='.$loginFields["upass"].'&submit='.$loginFields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $signinHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+    curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$loginFields["ucomp"].'&upass='.$loginFields["upass"].'&submit='.$loginFields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $signinHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
     $result = curl_exec($ch);
     
     curl_reset($ch);
     
     //On-Call Forwarding page set up and requested
-    curl_setopt_array($ch, array(CURLOPT_URL => $OCForwardingURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+    curl_setopt_array($ch, array(CURLOPT_URL => $OCForwardingURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
     $result = curl_exec($ch);
     
     $html = new DOMDocument();
@@ -394,40 +398,39 @@ function setUser($userToSet, $rType) {
     } else {
       $onCallBoundary = "---------------------------" . randomKey(16);
       $tsEmerBoundary = "---------------------------" . randomKey(16);
-      $postonCallForHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Referer: $OCForwardingURL","Cache-Control: no-cache");
-      $postonCallGenHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=$onCallBoundary","Referer: $OCGeneralURL","Cache-Control: no-cache");
+      $postonCallForHeaders = array('Host' => 'my.halloo.com','Origin' => 'https://my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => 'application/x-www-form-urlencoded','Referer' => 'https://my.halloo.com','Cache-Control' => 'no-cache');
+      $postonCallGenHeaders = array('Host' => 'my.halloo.com','Origin' => 'https://my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => "multipart/form-data; boundary=$onCallBoundary",'Referer' => 'https://my.halloo.com','Cache-Control' => 'no-cache');
       
-      $posttsEmerForHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Referer: $TSForwardingURL","Cache-Control: no-cache");
-      $posttsEmerGenHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=$tsEmerBoundary","Referer: $TSGeneralURL","Cache-Control: no-cache");
+      $posttsEmerForHeaders = array('Host' => 'my.halloo.com','Origin' => 'https://my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => 'application/x-www-form-urlencoded','Referer' => 'https://my.halloo.com','Cache-Control' => 'no-cache');
+      $posttsEmerGenHeaders = array('Host' => 'my.halloo.com','Origin' => 'https://my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => "multipart/form-data; boundary=$tsEmerBoundary",'Referer' => 'https://my.halloo.com','Cache-Control' => 'no-cache');
       
-      $onCallStrings = $onCallHomeField.'='.stripper($line[1]).'&'.$onCallOfficeField.'='.stripper($line[1]).'&'.$onCallMobileField.'='.stripper($line[1]).'&Submit=Save Changes';
-      
+      $onCallStrings = $onCallHomeField.'='.stripper($line[1]).'&'.$onCallOfficeField.'='.stripper($line[1]).'&'.$onCallMobileField.'='.stripper($line[1]).'&Submit=Save+Changes';
       $phoMail = phoMail($line[1],$line[3]);
       
       curl_reset($ch);
       
       //On-Call Forwarding page Post set up and executed
-      curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => $OCForwardingURL,CURLOPT_POSTFIELDS => $onCallStrings,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $postonCallForHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $OCForwardingURL,CURLOPT_POSTFIELDS => $onCallStrings,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $postonCallForHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       $result = curl_exec($ch);
       
       curl_reset($ch);
       
       //On-Call General page Get set up and executed
-      curl_setopt_array($ch, array(CURLOPT_URL => $OCGeneralURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $OCGeneralURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       
       $result = curl_exec($ch);
       $genPostFields = resultsHandler($result,$phoMail,$onCallBoundary);
       curl_reset($ch);
       
       //On-Call General page POST set up and executed
-      curl_setopt_array($ch, array(CURLOPT_URL => $OCGeneralURL,CURLOPT_POST => 1,CURLOPT_POSTFIELDS => $genPostFields,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $postonCallGenHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $OCGeneralURL,CURLOPT_POST => 1,CURLOPT_POSTFIELDS => $genPostFields,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $postonCallGenHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       
       $result = curl_exec($ch);
       
       curl_reset($ch);
       
       //tsEmer Forwarding page GET set up and requested
-      curl_setopt_array($ch, array(CURLOPT_URL => $TSForwardingURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $TSForwardingURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       $result = curl_exec($ch);
       
       $html = new DOMDocument();
@@ -440,25 +443,25 @@ function setUser($userToSet, $rType) {
       $tsEmerHomeField = $fwd->item(0)->getAttribute('name');
       $tsEmerOfficeField = $fwd->item(1)->getAttribute('name');
       $tsEmerMobileField = $fwd->item(2)->getAttribute('name');
-      $tsEmerStrings = $tsEmerHomeField.'='.stripper($line[1]).'&'.$tsEmerOfficeField.'='.stripper($line[1]).'&'.$tsEmerMobileField.'='.stripper($line[1]).'&Submit=Save Changes';
+      $tsEmerStrings = $tsEmerHomeField.'='.stripper($line[1]).'&'.$tsEmerOfficeField.'='.stripper($line[1]).'&'.$tsEmerMobileField.'='.stripper($line[1]).'&Submit=Save+Changes';
       
       curl_reset($ch);
       
       //tsEmer Forwarding page Post set up and executed
-      curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => $TSForwardingURL,CURLOPT_POSTFIELDS => $tsEmerStrings,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $posttsEmerForHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => $TSForwardingURL,CURLOPT_POSTFIELDS => $tsEmerStrings,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $posttsEmerForHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       $result = curl_exec($ch);
       
       curl_reset($ch);
       
       //tsEmer General page Get set up and executed
-      curl_setopt_array($ch, array(CURLOPT_URL => $TSGeneralURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $TSGeneralURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       
       $result = curl_exec($ch);
       $tsEmerPostFields = resultsHandler($result,$phoMail,$tsEmerBoundary);
       curl_reset($ch);
       
       //tsEmer General page POST set up and executed
-      curl_setopt_array($ch, array(CURLOPT_URL => $TSGeneralURL,CURLOPT_POST => 1,CURLOPT_POSTFIELDS => $tsEmerPostFields,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $posttsEmerGenHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $TSGeneralURL,CURLOPT_POST => 1,CURLOPT_POSTFIELDS => $tsEmerPostFields,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $posttsEmerGenHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       
       $result = curl_exec($ch);
       
@@ -502,17 +505,17 @@ function setUser($userToSet, $rType) {
 }
 
 function checkUser($rType){
-  $postHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
-  $getHeaders = array("Host: my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
+  $postHeaders = array('Host' => 'my.halloo.com','Origin' => 'https://my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => 'application/x-www-form-urlencoded','Cache-Control' => 'no-cache');
+  $getHeaders = array('Host' => 'my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Cache-Control' => 'no-cache');
     
-  $fields = array("ucomp" => 'INSERT EMAIL ADDRESS HERE',"upass" => 'INSERT PASSWORD HERE',"submit" => 'Sign-In');
+  $fields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In');
   
-  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $postHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $postHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
   $result = curl_exec($ch);
   
   curl_reset($ch);
   
-  curl_setopt_array($ch, array(CURLOPT_URL => 'http://my.halloo.com/ext/?view=User%20Settings&extn=oncall&tab=Forwarding',CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+  curl_setopt_array($ch, array(CURLOPT_URL => 'http://my.halloo.com/ext/?view=User%20Settings&extn=oncall&tab=Forwarding',CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
   
   $result = curl_exec($ch);
   $html = new DOMDocument();
@@ -736,8 +739,8 @@ function getAlertVars($from,$to,$passedTitle = False,$passedMsg = False) {
 }
 
 function availabilityToggling($togVal=true) {
-  $headers = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
-  $fields = array("ucomp" => 'INSERT EMAIL ADDRESS HERE',"upass" => 'INSERT PASSWORD HERE',"submit" => 'Sign-In');
+  $headers = array("Host" => "my.halloo.com","Origin" => "https://my.halloo.com","User-Agent" => USER_AGENT,"Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language" => "en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection" => "keep-alive","Content-Type" => "application/x-www-form-urlencoded","Cache-Control" => "no-cache");
+  $fields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In'); 
 
   curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
   $result = curl_exec($ch);
@@ -749,9 +752,9 @@ function availabilityToggling($togVal=true) {
   }
   curl_reset($ch);
   $data = "_METHOD=PUT&qstatus=".$togVal;
-  $availHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36","Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
+  $availHeaders = array("Host" => "my.halloo.com","Origin" => "https://my.halloo.com","User-Agent" => USER_AGENT,"Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language" => "en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection" => "keep-alive","Content-Type" => "application/x-www-form-urlencoded","Cache-Control" => "no-cache");
     
-  curl_setopt_array($ch, array(CURLOPT_URL => 'http://my.halloo.com/console/Extensions/steven',CURLOPT_POST => 1, CURLOPT_POSTFIELDS => $data,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $availHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+  curl_setopt_array($ch, array(CURLOPT_URL => 'http://my.halloo.com/console/Extensions/steven',CURLOPT_POST => 1, CURLOPT_POSTFIELDS => $data,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $availHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
   $result = curl_exec($ch);
   curl_close($ch);
   return($result);
@@ -859,7 +862,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
           if(stripper($pyOutput) == stripper($OCUser) && strpos($OCUser,'Error') === False && strpos($OCUser,'error') === False) {
             echo "<div class='main' style='text-align: center;'>The currently scheduled on-call user (" . ucfirst($pyOutput) .") is already set.</div>";
             break;
-          } else if (strpos($OCUser,'Error') !== 0 || strpos($OCUser,'error') !== 0) {
+          } else if (strpos($OCUser,'Error') !== False || strpos($OCUser,'error') !== False) {
             echo "<div class='main' style='text-align: center;'>There was an error while setting the onCall user. Please contact the administrator.</div>";
             break;
           }
