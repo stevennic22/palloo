@@ -4,11 +4,11 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 define('COOKIE_FILE', 'cookie.txt');
-define('USERNAME', '');
-define('PASSWORD', '');
+define('USERNAME', ''); //Insert Halloo Email address here
+define('PASSWORD', ''); //Insert Halloo password here
 define('USER_AGENT', 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36');
-define('PUSHOVER_API_TOKEN','');
-define('PUSHBULLET_API_TOKEN','');
+define('PUSHOVER_API_TOKEN',''); //Insert Pushover API Token here
+define('PUSHBULLET_API_TOKEN',''); //Insert Pushbullet API Token here
 echo "<!DOCTYPE html><html><head>";
 echo '<link rel="shortcut icon" type="image/x-icon" href="https://stevenv4test.sleepex.com/favicon.ico" />';
 echo "<title>";
