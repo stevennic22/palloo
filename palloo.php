@@ -331,8 +331,8 @@ function setUser($userToSet, $rType) {
     $TSForwardingURL = "http://my.halloo.com/ext/?view=User%20Settings&extn=TSEmergency&tab=Forwarding";
     $TSGeneralURL = "http://my.halloo.com/ext/?view=User%20Settings&extn=TSEmergency&tab=General";
     
-    $signinHeaders = array('Host' => 'my.halloo.com','Origin' => 'https://my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => 'application/x-www-form-urlencoded','Cache-Control' => 'no-cache');
-    $getterHeaders = array('Host' => 'my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Cache-Control' => 'no-cache');
+    $signinHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
+    $getterHeaders = array("Host: my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
     $loginFields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In');
     
     //Sign-In Post set up and requested
@@ -398,11 +398,11 @@ function setUser($userToSet, $rType) {
     } else {
       $onCallBoundary = "---------------------------" . randomKey(16);
       $tsEmerBoundary = "---------------------------" . randomKey(16);
-      $postonCallForHeaders = array('Host' => 'my.halloo.com','Origin' => $OCForwardingURL,'User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => 'application/x-www-form-urlencoded','Referer' => 'https://my.halloo.com','Cache-Control' => 'no-cache');
-      $postonCallGenHeaders = array('Host' => 'my.halloo.com','Origin' => $OCGeneralURL,'User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => "multipart/form-data; boundary=$onCallBoundary",'Referer' => 'https://my.halloo.com','Cache-Control' => 'no-cache');
+      $postonCallForHeaders = array("Host: my.halloo.com","Origin: $OCForwardingURL","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Referer: $OCForwardingURL","Cache-Control: no-cache");
+      $postonCallGenHeaders = array("Host: my.halloo.com","Origin: $OCGeneralURL","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=$onCallBoundary","Referer: $OCGeneralURL","Cache-Control: no-cache");
       
-      $posttsEmerForHeaders = array('Host' => 'my.halloo.com','Origin' => $TSForwardingURL,'User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => 'application/x-www-form-urlencoded','Referer' => 'https://my.halloo.com','Cache-Control' => 'no-cache');
-      $posttsEmerGenHeaders = array('Host' => 'my.halloo.com','Origin' => $TSGeneralURL,'User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => "multipart/form-data; boundary=$tsEmerBoundary",'Referer' => 'https://my.halloo.com','Cache-Control' => 'no-cache');
+      $posttsEmerForHeaders = array("Host: my.halloo.com","Origin: $TSForwardingURL","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Referer: $TSForwardingURL","Cache-Control: no-cache");
+      $posttsEmerGenHeaders = array("Host: my.halloo.com","Origin: $TSGeneralURL","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=$tsEmerBoundary","Referer: $TSGeneralURL","Cache-Control: no-cache");
       
       $onCallStrings = $onCallHomeField.'='.stripper($line[1]).'&'.$onCallOfficeField.'='.stripper($line[1]).'&'.$onCallMobileField.'='.stripper($line[1]).'&Submit=Save+Changes';
       $phoMail = phoMail($line[1],$line[3]);
@@ -505,8 +505,8 @@ function setUser($userToSet, $rType) {
 }
 
 function checkUser($rType){
-  $postHeaders = array('Host' => 'my.halloo.com','Origin' => 'https://my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Content-Type' => 'application/x-www-form-urlencoded','Cache-Control' => 'no-cache');
-  $getHeaders = array('Host' => 'my.halloo.com','User-Agent' => USER_AGENT,'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8','Accept-Language' => 'en-US,en;q=0.5','Accept-Encoding' => 'gzip, deflate','Connection' => 'keep-alive','Cache-Control' => 'no-cache');
+  $postHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
+  $getHeaders = array("Host: my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
     
   $fields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In');
   
@@ -739,7 +739,7 @@ function getAlertVars($from,$to,$passedTitle = False,$passedMsg = False) {
 }
 
 function availabilityToggling($togVal=true) {
-  $headers = array("Host" => "my.halloo.com","Origin" => "https://my.halloo.com","User-Agent" => USER_AGENT,"Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language" => "en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection" => "keep-alive","Content-Type" => "application/x-www-form-urlencoded","Cache-Control" => "no-cache");
+  $headers = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
   $fields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In'); 
 
   curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
@@ -752,7 +752,7 @@ function availabilityToggling($togVal=true) {
   }
   curl_reset($ch);
   $data = "_METHOD=PUT&qstatus=".$togVal;
-  $availHeaders = array("Host" => "my.halloo.com","Origin" => "http://my.halloo.com/ext/","User-Agent" => USER_AGENT,"Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language" => "en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection" => "keep-alive","Content-Type" => "application/x-www-form-urlencoded","Cache-Control" => "no-cache");
+  $availHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
     
   curl_setopt_array($ch, array(CURLOPT_URL => 'http://my.halloo.com/console/Extensions/steven',CURLOPT_POST => 1, CURLOPT_POSTFIELDS => $data,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $availHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
   $result = curl_exec($ch);
