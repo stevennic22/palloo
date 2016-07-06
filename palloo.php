@@ -45,24 +45,6 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
   } else {
     echo "Palloo Help";
   }
-} else if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  if (count($_POST) == 0) {
-    echo "Palloo Help";
-  } else if(isset($_POST["help"])){
-    echo "Palloo Help";
-  } else if (isset($_POST["process"])) {
-    $procVar = strtolower($_POST["process"]);
-    switch($procVar){
-      case "alert":
-        echo "Palloo Alert";
-        break;
-      default:
-        echo "Palloo Help";
-        break;
-    }
-  } else {
-    echo "Palloo Help";
-  }
 }
 echo "</title><style>.main {margin: auto;
     //margin-left: auto;
@@ -678,7 +660,11 @@ function getAlertVars($from,$to = "oncall",$storage = array()) {
     
     $comVars[1] = "The monitor '" . $storage["monitorFriendlyName"] . "' (" . $storage["monitorURL"] . ") is currently " . $upDown . " (" . $storage["alertDetails"] . ").";
     
-    return($comVars);
+    if (isset($storage["name"])) {
+      $comVars[2] = input_cleanse($storage["name"]);
+    } else {
+      $comVars[2] = $to;
+    }
   } else {
     if (!empty($storage)) {
       foreach($storage as $query_string_variable => $value) {
@@ -709,24 +695,33 @@ function getAlertVars($from,$to = "oncall",$storage = array()) {
     }
   }
   
-  //Sets directory of extensions
-  $dir = 'Ext';
-  
-  //Creates array with file names, excluding On Call and extraneous information
-  $dirFiles = array_diff(scandir($dir), array('..', '.','oncall','rotation','phptransfer'));
-  $line = [];
-  //Loops through key/val array of files to determine which user has the phone number that matches the On Call number
-  while (list($key,$val) = each($dirFiles)){
-    $line[] = $val;
-    $filePath = $dir . "/" . $val;
-    $handle = fopen($filePath, "r");
+  if(strtolower(stripper($comVars[2])) == "oncall") {
+    $line[] = "oncall";
+    $filepath = 'Ext/oncall';
+    $handle = fopen($filepath,"r");
     while(!feof($handle)){
       $line[] = fgets($handle);
     }
-    if(stripper($comVars[2]) == stripper($line[0])) {
-      break;
+  } else {
+    //Sets directory of extensions
+    $dir = 'Ext';
+    
+    //Creates array with file names, excluding On Call and extraneous information
+    $dirFiles = array_diff(scandir($dir), array('..', '.','oncall','rotation','phptransfer'));
+    $line = [];
+    //Loops through key/val array of files to determine which user has the phone number that matches the On Call number
+    while (list($key,$val) = each($dirFiles)){
+      $line[] = $val;
+      $filePath = $dir . "/" . $val;
+      $handle = fopen($filePath, "r");
+      while(!feof($handle)){
+        $line[] = fgets($handle);
+      }
+      if(stripper($comVars[2]) == stripper($line[0])) {
+        break;
+      }
+      unset($line);
     }
-    unset($line);
   }
   
   if(!isset($line)) {
@@ -811,7 +806,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         break;
       case "alert":
         $getStorage = $_GET;
-        if (isset($getStorage["from"]) && $getStorage["from"] == "uptime") {
+        if (isset($getStorage["from"]) && input_cleanse($getStorage["from"]) == "uptime") {
           $alertVars = getAlertVars(1,"oncall",$getStorage);
         } else if (isset($getStorage["name"])){
           $alertVars = getAlertVars(0,$getStorage["name"],$getStorage);
@@ -825,7 +820,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
           } else if ($i == 1){
             echo "<div class='main' style='text-align: center;'>Message: " . $alertVars[$i] . "</div>";
           } else {
-            echo "<div class='main' style='text-align: center;'>" . $alertVars[$i] . "</div>";
+            //echo "<div class='main' style='text-align: center;'>" . $alertVars[$i] . "</div>";
           }
         }
         break;
@@ -905,40 +900,6 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     }
   } else {
     echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
-  }
-} else if ($_SERVER["REQUEST_METHOD"] == "POST") {
-  if (count($_POST) == 0) {
-    echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Alert<br></div>";
-  } else if(isset($_POST["help"])){
-    echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Alert<br></div>";
-  } else if (isset($_POST["process"])) {
-    $procVar = input_cleanse(strtolower($_POST["process"]));
-    switch($procVar){
-      case "alert":
-        $postStorage = $_POST;
-        if (isset($postStorage["from"]) && $postStorage["from"] == "uptime") {
-          $alertVars = getAlertVars(1,"oncall",$postStorage);
-        } else if (isset($postStorage["name"])){
-          $alertVars = getAlertVars(0,$postStorage["name"],$postStorage);
-        } else {
-          $alertVars = getAlertVars(0,"oncall",$postStorage);
-        }
-        for($i=0;$i < count($alertVars);$i++){
-          if ($i == 0){
-            echo "<div class='main' style='text-align: center;'>Title: " . $alertVars[$i] . "</div>";
-          } else if ($i == 1){
-            echo "<div class='main' style='text-align: center;'>Message: " . $alertVars[$i] . "</div>";
-          } else {
-            echo "<div class='main' style='text-align: center;'>" . $alertVars[$i] . "</div>";
-          }
-        }
-        break;
-      default:
-        echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Alert<br></div>";
-        break;
-    }
-  } else {
-    echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Alert<br></div>";
   }
 }
 echo "</body></html>";
