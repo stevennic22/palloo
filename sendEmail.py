@@ -4,7 +4,7 @@ import os, sys, getopt, smtplib, logging, datetime
 
 if(os.path.isdir("LOGS") == False):
   os.makedirs("LOGS")
-logFileName = os.path.normpath("LOGS\sendMail") + datetime.datetime.now().strftime("%d%m%y%H%M%S") + ".LOG"
+logFileName = os.path.normpath("LOGS\sendMail") + datetime.datetime.now().strftime("%y%m%d%H%M%S") + ".LOG"
 logging.basicConfig(format='%(levelname)s: %(message)s', filename=logFileName,level=logging.INFO)
 
 msgSetup = ["","",""]

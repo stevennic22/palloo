@@ -1,5 +1,4 @@
 <?php
-//TO DO: Set function: Check to make sure that all values are in found HTML (resultsHandler)
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
@@ -14,39 +13,55 @@ echo '<link rel="shortcut icon" type="image/x-icon" href="https://stevenv4test.s
 echo "<title>";
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
-  //echo "GET <br>";
-  if (count($_GET) == 0 || isset($_GET["help"])){
+  if (count($_GET) == 0) {
+    echo "Palloo Help";
+  } else if(isset($_GET["help"])){
     echo "Palloo Help";
   } else if (isset($_GET["process"])) {
-    if(strtolower($_GET["process"]) == "help"){
-      echo "Palloo Help";
-    } else if (!count($_GET) == 0) {
-      if (isset($_GET["process"])) {
-        $procVar = strtolower($_GET["process"]);
-        switch($procVar){
-          case "check":
-            echo "Palloo Check";
-            break;
-          case "set";
-            echo "Palloo Set";
-            break;
-          case "alert":
-            echo "Palloo Alert";
-            break;
-          case "auto":
-            echo "Palloo Auto-Rotate";
-            break;
-          case "numswap":
-            echo "Palloo Swapping";
-            break;
-          case "avail":
-            echo "Palloo Availability";
-            break;
-        }
-      } else {
+    $procVar = strtolower($_GET["process"]);
+    switch($procVar){
+      case "check":
+        echo "Palloo Check";
+        break;
+      case "set";
+        echo "Palloo Set";
+        break;
+      case "alert":
+        echo "Palloo Alert";
+        break;
+      case "auto":
+        echo "Palloo Auto-Rotate";
+        break;
+      case "numswap":
+        echo "Palloo Swapping";
+        break;
+      case "avail":
+        echo "Palloo Availability";
+        break;
+      default:
         echo "Palloo Help";
-      }
+        break;
     }
+  } else {
+    echo "Palloo Help";
+  }
+} else if ($_SERVER["REQUEST_METHOD"] == "POST") {
+  if (count($_POST) == 0) {
+    echo "Palloo Help";
+  } else if(isset($_POST["help"])){
+    echo "Palloo Help";
+  } else if (isset($_POST["process"])) {
+    $procVar = strtolower($_POST["process"]);
+    switch($procVar){
+      case "alert":
+        echo "Palloo Alert";
+        break;
+      default:
+        echo "Palloo Help";
+        break;
+    }
+  } else {
+    echo "Palloo Help";
   }
 }
 echo "</title><style>.main {margin: auto;
@@ -608,7 +623,7 @@ function checkUser($rType){
   }
 }
 
-function getAlertVars($from,$to,$passedTitle = False,$passedMsg = False) {
+function getAlertVars($from,$to = "oncall",$storage = array()) {
   //$file[0] == filename
   //$file[1] == phone number
   //$file[2] == email address
@@ -650,54 +665,47 @@ function getAlertVars($from,$to,$passedTitle = False,$passedMsg = False) {
   }
   
   if($from == 1){
-    if($_GET["alertType"] == 1) {
-      $comVars[0] = "Monitor is UP: " . $_GET["monitorFriendlyName"];
+    if($storage["alertType"] == 1) {
+      $comVars[0] = "Monitor is UP: " . $storage["monitorFriendlyName"];
       $upDown = "UP";
-    } else if ($_GET["alertType"] == 2) {
-      $comVars[0] = "Monitor is DOWN: " . $_GET["monitorFriendlyName"];
+    } else if ($storage["alertType"] == 2) {
+      $comVars[0] = "Monitor is DOWN: " . $storage["monitorFriendlyName"];
       $upDown = "DOWN";
     } else {
-      $comVars[0] = "Monitor is in a superposition of both UP and DOWN: " . $_GET["monitorFriendlyName"];
+      $comVars[0] = "Monitor is in a superposition of both UP and DOWN: " . $storage["monitorFriendlyName"];
       $upDown = "in a superposition of both UP and DOWN";
     }
     
-    $comVars[1] = "The monitor '" . $_GET["monitorFriendlyName"] . "' (" . $_GET["monitorURL"] . ") is currently " . $upDown . " (" . $_GET["alertDetails"] . ").";
+    $comVars[1] = "The monitor '" . $storage["monitorFriendlyName"] . "' (" . $storage["monitorURL"] . ") is currently " . $upDown . " (" . $storage["alertDetails"] . ").";
     
     return($comVars);
   } else {
-    foreach($_GET as $query_string_variable => $value) {
-      switch($query_string_variable) {
-        case "title":
-          $comVars[0] = input_cleanse($value);
-          break;
-        case "msg":
-          $comVars[1] = input_cleanse($value);
-          break;
-        case "name":
-          $comVars[2] = input_cleanse($value);
-          break;
+    if (!empty($storage)) {
+      foreach($storage as $query_string_variable => $value) {
+        switch($query_string_variable) {
+          case "title":
+            $comVars[0] = input_cleanse($value);
+            break;
+          case "msg":
+            $comVars[1] = input_cleanse($value);
+            break;
+          case "name":
+            $comVars[2] = input_cleanse($value);
+            break;
+        }
       }
     }
-    if(isset($_GET["title"]) && $passedTitle == False){
-      $comVars[0] = input_cleanse($_GET["title"]);
-    } else if ($passedTitle != False) {
-      $comVars[0] = $passedTitle;
-    } else {
-      $comVars[0] = "Title was not set";
-    }
-    if(isset($_GET["msg"]) && $passedMsg == False){
-      $comVars[1] = input_cleanse($_GET["msg"]);
-    } else if ($passedMsg != False) {
-      $comVars[1] = $passedMsg;
-    } else {
-      $comVars[1] = "Message was not set";
-    }
-    if(!isset($name) && !isset($to)){
-      $comVars[2] = "oncall";
-    } else if (isset($to)) {
-      $comVars[2] = $to;
-    } else {
-      $comVars[2] = "oncall";
+    
+    for ($x = 0; $x < 3; $x++) {
+      if(!isset($comVars[$x])) {
+        if ($x == 0) {
+          $comVars[0] = "Title was not set";
+        } else if ($x == 1) {
+          $comVars[1] = "Message was not set";
+        } else if ($x == 2) {
+          $comVars[2] = $to;
+        }
+      }
     }
   }
   
@@ -762,133 +770,175 @@ function availabilityToggling($togVal=true) {
 
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
-  if (count($_GET) == 0 || isset($_GET["help"])){
+  if (count($_GET) == 0) {
+    echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
+  } else if(isset($_GET["help"])){
     echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
   } else if (isset($_GET["process"])) {
-    if(strtolower($_GET["process"]) == "help"){
-      echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
-    } else if (isset($_GET["process"])) {
-      $procVar = input_cleanse(strtolower($_GET["process"]));
-      switch($procVar){
-        case "check":
-          $OCUser = checkUser(1);
-          
-          if (is_String($OCUser)) {
-            if (strpos($OCUser,'Error') !== False || strpos($OCUser,'error') !== False) {
-              echo "<div class='main' style='text-align: center;'>There was an error while checking the onCall user. Please contact the administrator.</div>";
+    $procVar = input_cleanse(strtolower($_GET["process"]));
+    switch($procVar){
+      case "check":
+        $OCUser = checkUser(1);
+        
+        if (is_String($OCUser)) {
+          if (strpos($OCUser,'Error') !== False || strpos($OCUser,'error') !== False) {
+            echo "<div class='main' style='text-align: center;'>There was an error while checking the onCall user. Please contact the administrator.</div>";
+            $alertVars = getAlertVars(0,"steven",array("title" => "Error while checking the OnCall user","msg" => "There was an error while checking the onCall user."));
+          } else {
+            echo "<div class='main' style='text-align: center;'>" . $OCUser . "</div>";
+          }
+        } else {
+          echo "<div class='main' style='text-align: center;'>Unknown return type.</div>";
+        }
+        break;
+      case "set":
+        if (isset($_GET["name"])) {
+          $setVars = input_cleanse(strtolower($_GET["name"]));
+          $funcUpdate = setUser($setVars, 1);
+          if (is_String($funcUpdate)) {
+            if (strpos($funcUpdate,'Error') !== False || strpos($funcUpdate,'error') !== False) {
+              echo "<div class='main' style='text-align: center;'>There was an error while setting the onCall user. Please contact the administrator.</div>";
+              $alertVars = getAlertVars(0,"steven",array("title" => "Error while setting a user OnCall","msg" => "There was an error while setting the onCall user."));
             } else {
-              echo "<div class='main' style='text-align: center;'>" . $OCUser . "</div>";
+              echo "<div class='main' style='text-align: center;'>" . $funcUpdate . "</div>";
             }
           } else {
             echo "<div class='main' style='text-align: center;'>Unknown return type.</div>";
           }
-          break;
-        case "set":
-          if (isset($_GET["name"])) {
-            $setVars = input_cleanse(strtolower($_GET["name"]));
-            $funcUpdate = setUser($setVars, 1);
-            if (is_String($funcUpdate)) {
-              if (strpos($funcUpdate,'Error') !== False || strpos($funcUpdate,'error') !== False) {
-                echo "<div class='main' style='text-align: center;'>There was an error while setting the onCall user. Please contact the administrator.</div>";
-              } else {
-                echo "<div class='main' style='text-align: center;'>" . $funcUpdate . "</div>";
-              }
-            } else {
-              echo "<div class='main' style='text-align: center;'>Unknown return type.</div>";
-            }
+        } else {
+          echo "<div class='main' style='text-align: center;'>Please provide a valid name.</div>";
+        }
+        break;
+      case "alert":
+        $getStorage = $_GET;
+        if (isset($getStorage["from"]) && $getStorage["from"] == "uptime") {
+          $alertVars = getAlertVars(1,"oncall",$getStorage);
+        } else if (isset($getStorage["name"])){
+          $alertVars = getAlertVars(0,$getStorage["name"],$getStorage);
+        } else {
+          $alertVars = getAlertVars(0,"oncall",$getStorage);
+        }
+        
+        for($i=0;$i < count($alertVars);$i++){
+          if ($i == 0){
+            echo "<div class='main' style='text-align: center;'>Title: " . $alertVars[$i] . "</div>";
+          } else if ($i == 1){
+            echo "<div class='main' style='text-align: center;'>Message: " . $alertVars[$i] . "</div>";
           } else {
-            echo "<div class='main' style='text-align: center;'>Please provide a valid name.</div>";
+            echo "<div class='main' style='text-align: center;'>" . $alertVars[$i] . "</div>";
           }
-          break;
-        case "alert":
-          if (isset($_GET["from"]) && $_GET["from"]=="uptime") {
-            $alertVars = getAlertVars(1);
-          } else if (isset($_GET["name"])){
-            $alertVars = getAlertVars(0,$_GET["name"]);
-          } else {
-            $alertVars = getAlertVars(0);
-          }
-          //echo $alertVars[0];
-          for($i=0;$i < count($alertVars);$i++){
-            if ($i == 0){
-              echo "<div class='main' style='text-align: center;'>Title: " . $alertVars[$i] . "</div>";
-            } else if ($i == 1){
-              echo "<div class='main' style='text-align: center;'>Message: " . $alertVars[$i] . "</div>";
-            } else {
-              echo "<div class='main' style='text-align: center;'>" . $alertVars[$i] . "</div>";
-            }
-          }
-          break;
-        case "numswap":
-          if(isset($_GET["line"])){
-            if(strtolower($_GET["line"]) == "office" || strtolower($_GET["line"]) == "voicemail" || strtolower($_GET["line"]) == "mobile" || strtolower($_GET["line"]) == "home") {
-              $numSwapLine = swappa(ucfirst(strtolower($_GET["line"])));
-              echo "<div class='main' style='text-align: center;'>Current Line: " . $numSwapLine . "</div>";
-            } else {
-              echo "<div class='main' style='text-align: center;'>Please supply a valid phone line to swap to.</div>";
-            }
+        }
+        break;
+      case "numswap":
+        if(isset($_GET["line"])){
+          if(strtolower($_GET["line"]) == "office" || strtolower($_GET["line"]) == "voicemail" || strtolower($_GET["line"]) == "mobile" || strtolower($_GET["line"]) == "home") {
+            $numSwapLine = swappa(ucfirst(strtolower($_GET["line"])));
+            echo "<div class='main' style='text-align: center;'>Current Line: " . $numSwapLine . "</div>";
           } else {
             echo "<div class='main' style='text-align: center;'>Please supply a valid phone line to swap to.</div>";
           }
+        } else {
+          echo "<div class='main' style='text-align: center;'>Please supply a valid phone line to swap to.</div>";
+        }
+        break;
+      case "avail":
+        if(isset($_GET["set"])){
+          $toggleRes = availabilityToggling(stripper(strtolower($_GET["set"])));
+        } else {
+          $toggleRes = availabilityToggling();
+        }
+        //echo "<div class='main' style='text-align: center;'>" . $toggleRes . "</div>";
+        break;
+      case "auto":
+        //Gather information from rotation file
+        shell_exec("cal.py");
+        $transferfilename = "Ext/phptransfer";
+        
+        if(file_exists($transferfilename)) {
+          $pyCapture = fopen($transferfilename, "r");
+          while(!feof($pyCapture)){
+              $transferFileInfo[] = fgets($pyCapture);
+          }
+          fclose($pyCapture);
+          $pyOutput = stripper($transferFileInfo[0]);
+          unlink($transferfilename);
+        } else {
+          echo "<div class='main' style='text-align: center;'>There was an error gathering on call username. Please try again.</div>";
+          $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run.","msg" => "There was an error gathering on call username. Please try again."));
           break;
-        case "avail":
-          if(isset($_GET["set"])){
-            $toggleRes = availabilityToggling(stripper(strtolower($_GET["set"])));
-          } else {
-            $toggleRes = availabilityToggling();
-          }
-          //echo "<div class='main' style='text-align: center;'>" . $toggleRes . "</div>";
+        }
+        
+        $OCUser = checkUser(0);
+        
+        if(stripper($pyOutput) == stripper($OCUser) && strpos($OCUser,'Error') === False && strpos($OCUser,'error') === False) {
+          echo "<div class='main' style='text-align: center;'>The currently scheduled on-call user (" . ucfirst($pyOutput) .") is already set.</div>";
+          $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($pyOutput)));
           break;
-        case "auto":
-          //Gather information from rotation file
-          shell_exec("cal.py");
-          $transferfilename = "Ext/phptransfer";
-          
-          if(file_exists($transferfilename)) {
-            $pyCapture = fopen($transferfilename, "r");
-            while(!feof($pyCapture)){
-                $transferFileInfo[] = fgets($pyCapture);
-            }
-            fclose($pyCapture);
-            $pyOutput = stripper($transferFileInfo[0]);
-            unlink($transferfilename);
-          } else {
-            echo "<div class='main' style='text-align: center;'>There was an error gathering on call username. Please try again.</div>";
-            break;
-          }
-          
-          $OCUser = checkUser(0);
-          
-          if(stripper($pyOutput) == stripper($OCUser) && strpos($OCUser,'Error') === False && strpos($OCUser,'error') === False) {
-            echo "<div class='main' style='text-align: center;'>The currently scheduled on-call user (" . ucfirst($pyOutput) .") is already set.</div>";
-            break;
-          } else if (strpos($OCUser,'Error') !== False || strpos($OCUser,'error') !== False) {
-            echo "<div class='main' style='text-align: center;'>There was an error while setting the onCall user. Please contact the administrator.</div>";
-            break;
-          }
-          
-          //Get ready to call setUser() function
-          $setVars = input_cleanse(strtolower($pyOutput));
-          $funcUpdate = setUser($setVars,0);
-          
-          //Once setting is over, check result
-          $OCUser = checkUser(0);
-          
-          
-          //If response from setting is a string and it isn't yelling about a bad name, finishing rotating in rotation file
-          if ($funcUpdate != $OCUser) {
-            //If the response from setting the value is yelling about a bad name, this happens.
-            echo "<div class='main' style='text-align: center;'>There was an error and something didn't update. Please try again.</div>";
-            //Should probably send notification...
-          } else {
-            $alertVars = getAlertVars(0,"oncall","You are now on call","You have been automatically set to on call based on a schedule. Good luck!");
-            echo "<div class='main' style='text-align: center;'>The currently scheduled on-call user (" . ucfirst($pyOutput) .") has been set.</div>";
-          }
+        } else if (strpos($OCUser,'Error') !== False || strpos($OCUser,'error') !== False) {
+          echo "<div class='main' style='text-align: center;'>There was an error while setting the onCall user. Please contact the administrator.</div>";
+          $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => "There was an error while setting the onCall user."));
           break;
-      }
-    } else {
-      echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
+        }
+        
+        //Get ready to call setUser() function
+        $setVars = input_cleanse(strtolower($pyOutput));
+        $funcUpdate = setUser($setVars,0);
+        
+        //Once setting is over, check result
+        $OCUser = checkUser(0);
+        
+        
+        //If response from setting is a string and it isn't yelling about a bad name, finishing rotating in rotation file
+        if ($funcUpdate != $OCUser) {
+          //If the response from setting the value is yelling about a bad name, this happens.
+          echo "<div class='main' style='text-align: center;'>There was an error and something didn't update. Please try again.</div>";
+          $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => "There was an error and something didn't update. Please try again."));
+        } else {
+          $alertVars = getAlertVars(0,"oncall",array("title" => "You are now on call","msg" => "You have been automatically set to on call based on a schedule. Good luck!"));
+          echo "<div class='main' style='text-align: center;'>The currently scheduled on-call user (" . ucfirst($pyOutput) .") has been set.</div>";
+          $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($pyOutput)));
+        }
+        break;
+      default:
+        echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
+        break;
     }
+  } else {
+    echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
+  }
+} else if ($_SERVER["REQUEST_METHOD"] == "POST") {
+  if (count($_POST) == 0) {
+    echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Alert<br></div>";
+  } else if(isset($_POST["help"])){
+    echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Alert<br></div>";
+  } else if (isset($_POST["process"])) {
+    $procVar = input_cleanse(strtolower($_POST["process"]));
+    switch($procVar){
+      case "alert":
+        $postStorage = $_POST;
+        if (isset($postStorage["from"]) && $postStorage["from"] == "uptime") {
+          $alertVars = getAlertVars(1,"oncall",$postStorage);
+        } else if (isset($postStorage["name"])){
+          $alertVars = getAlertVars(0,$postStorage["name"],$postStorage);
+        } else {
+          $alertVars = getAlertVars(0,"oncall",$postStorage);
+        }
+        for($i=0;$i < count($alertVars);$i++){
+          if ($i == 0){
+            echo "<div class='main' style='text-align: center;'>Title: " . $alertVars[$i] . "</div>";
+          } else if ($i == 1){
+            echo "<div class='main' style='text-align: center;'>Message: " . $alertVars[$i] . "</div>";
+          } else {
+            echo "<div class='main' style='text-align: center;'>" . $alertVars[$i] . "</div>";
+          }
+        }
+        break;
+      default:
+        echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Alert<br></div>";
+        break;
+    }
+  } else {
+    echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Alert<br></div>";
   }
 }
 echo "</body></html>";
