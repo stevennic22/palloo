@@ -647,10 +647,10 @@ function getAlertVars($from,$to = "oncall",$storage = array()) {
   }
   
   if($from == 1){
-    if($storage["alertType"] == 1) {
+    if($storage["alertType"] == 2) {
       $comVars[0] = "Monitor is UP: " . $storage["monitorFriendlyName"];
       $upDown = "UP";
-    } else if ($storage["alertType"] == 2) {
+    } else if ($storage["alertType"] == 1) {
       $comVars[0] = "Monitor is DOWN: " . $storage["monitorFriendlyName"];
       $upDown = "DOWN";
     } else {
