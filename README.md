@@ -22,6 +22,6 @@
 
 ### Resources
 
--	[Google Calendar API Quickstart Guide](https://developers.google.com/google-apps/calendar/quickstart/python)
+- [Google Calendar API Quickstart Guide](https://developers.google.com/google-apps/calendar/quickstart/python)
 - [Google Calendar API Calendar Documentation](https://developers.google.com/resources/api-libraries/documentation/calendar/v3/python/latest/calendar_v3.calendarList.html#list)
 - [Google Calendar API Events Documentation](https://developers.google.com/resources/api-libraries/documentation/calendar/v3/python/latest/calendar_v3.events.html#list)
