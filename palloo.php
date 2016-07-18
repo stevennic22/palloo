@@ -130,7 +130,7 @@ function sendText($service, $number, $title, $msg) {
       $execution = str_replace(array("'"), '"', $execution);
       shell_exec($execution);
       break;
-    case "google fi":
+    case "googlefi":
       $to = $number . "@msg.fi.google.com";
       $execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
       $execution = str_replace(array("'"), '"', $execution);
@@ -605,6 +605,35 @@ function checkUser($rType){
   }
 }
 
+function alertOutput($file,$comVars) {
+  switch(strtolower(stripper($file[4]))){
+    case "pushover":
+      pushOver(stripper($file[5]), $comVars[0], $comVars[1]);
+      break;
+    case "sms":
+      if(stripper($file[3]) != 'GoogleFi' && stripper($file[3]) != 'AT&T' && stripper($file[3]) != 'Sprint' && stripper($file[3]) != 'T-Mobile' && stripper($file[3]) != 'Verizon') {
+        sendAnEmail(stripper($file[2]), $comVars[0], $comVars[1]);
+      } else {
+        sendText($file[3], stripper($file[1]), $comVars[0], $comVars[1]);
+      }
+      break;
+    case "pushbullet":
+      if (isset($file[5])) {
+        pushBullet($file[5], $comVars[0], $comVars[1]);
+      } else {
+        pushBullet($file[2], $comVars[0], $comVars[1]);
+      }
+      break;
+    case "email":
+      if (isset($file[5])) {
+        sendAnEmail(stripper($file[5]), $comVars[0], $comVars[1]);
+      } else {
+        sendAnEmail(stripper($file[2]), $comVars[0], $comVars[1]);
+      }
+      break;
+  }
+}
+
 function getAlertVars($from,$to = "oncall",$storage = array()) {
   //$file[0] == filename
   //$file[1] == phone number
@@ -616,35 +645,6 @@ function getAlertVars($from,$to = "oncall",$storage = array()) {
   //If method is pushover - 5 is device ID
   //If method is email - 5 would not be needed (unless personal email)
   //If method is pushbullet - 5 would be personal user email address (if blank, use work email)
-  
-  function alertOutput($file,$comVars) {
-    switch(strtolower(stripper($file[4]))){
-      case "pushover":
-        pushOver(stripper($file[5]), $comVars[0], $comVars[1]);
-        break;
-      case "sms":
-        if(stripper($file[3]) != 'Google Fi' && stripper($file[3]) != 'AT&T' && stripper($file[3]) != 'Sprint' && stripper($file[3]) != 'T-Mobile' && stripper($file[3]) != 'Verizon') {
-          sendAnEmail(stripper($file[2]), $comVars[0], $comVars[1]);
-        } else {
-          sendText($file[3], stripper($file[1]), $comVars[0], $comVars[1]);
-        }
-        break;
-      case "pushbullet":
-        if (isset($file[5])) {
-          pushBullet($file[5], $comVars[0], $comVars[1]);
-        } else {
-          pushBullet($file[2], $comVars[0], $comVars[1]);
-        }
-        break;
-      case "email":
-        if (isset($file[5])) {
-          sendAnEmail(stripper($file[5]), $comVars[0], $comVars[1]);
-        } else {
-          sendAnEmail(stripper($file[2]), $comVars[0], $comVars[1]);
-        }
-        break;
-    }
-  }
   
   if($from == 1){
     if($storage["alertType"] == 2) {
@@ -891,7 +891,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         } else {
           $alertVars = getAlertVars(0,"oncall",array("title" => "You are now on call","msg" => "You have been automatically set to on call based on a schedule. Good luck!"));
           echo "<div class='main' style='text-align: center;'>The currently scheduled on-call user (" . ucfirst($pyOutput) .") has been set.</div>";
-          $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($pyOutput)));
+          if ($pyOutput != 'steven') {
+            $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($pyOutput)));
+          }
         }
         break;
       default:
