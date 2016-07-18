@@ -891,7 +891,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         } else {
           $alertVars = getAlertVars(0,"oncall",array("title" => "You are now on call","msg" => "You have been automatically set to on call based on a schedule. Good luck!"));
           echo "<div class='main' style='text-align: center;'>The currently scheduled on-call user (" . ucfirst($pyOutput) .") has been set.</div>";
-          if ($pyOutput != 'steven') {
+          if(strtolower($pyOutput) != 'steven') {
             $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($pyOutput)));
           }
         }
