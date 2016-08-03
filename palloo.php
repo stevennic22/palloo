@@ -71,7 +71,8 @@ function pushOver($user, $title, $msg) {
       "user" => $user,
       "title" => $title,
       "message" => $msg,
-      "sound" => "none",
+      "sound" => "bugle",
+      "priority" => 0
     ),
     CURLOPT_SAFE_UPLOAD => true,
     CURLOPT_SSL_VERIFYPEER => false,
@@ -89,7 +90,7 @@ function pushBullet($email, $title, $msg) {
       "email" => $email,
       "type" => "note",
       "title" => $title,
-      "body" => $msg,
+      "body" => $msg
     ),
     CURLOPT_SAFE_UPLOAD => true,
     CURLOPT_SSL_VERIFYPEER => false,
