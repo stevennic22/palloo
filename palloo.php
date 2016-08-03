@@ -648,16 +648,17 @@ function getAlertVars($from,$to = "oncall",$storage = array()) {
   
   if($from == 1){
     if($storage["alertType"] == 2) {
-      $comVars[0] = "Monitor is UP: " . $storage["monitorFriendlyName"];
+      $comVars[0] = "Monitor is UP: " . urldecode($storage["monitorFriendlyName"]);
       $upDown = "UP";
     } else if ($storage["alertType"] == 1) {
-      $comVars[0] = "Monitor is DOWN: " . $storage["monitorFriendlyName"];
+      $comVars[0] = "Monitor is DOWN: " . urldecode($storage["monitorFriendlyName"]);
       $upDown = "DOWN";
     } else {
-      $comVars[0] = "Monitor is in a superposition of both UP and DOWN: " . $storage["monitorFriendlyName"];
+      $comVars[0] = "Monitor is in a superposition of both UP and DOWN: " . urldecode($storage["monitorFriendlyName"]);
       $upDown = "in a superposition of both UP and DOWN";
     }
     
+    $comVars[1] = urldecode("The monitor `" . $storage["monitorFriendlyName"] . "` (" . $storage["monitorURL"] . ") is currently " . $upDown . " (" . $storage["alertDetails"] . ").");
     
     if (isset($storage["name"])) {
       $comVars[2] = input_cleanse($storage["name"]);
