@@ -658,7 +658,6 @@ function getAlertVars($from,$to = "oncall",$storage = array()) {
       $upDown = "in a superposition of both UP and DOWN";
     }
     
-    $comVars[1] = "The monitor '" . $storage["monitorFriendlyName"] . "' (" . $storage["monitorURL"] . ") is currently " . $upDown . " (" . $storage["alertDetails"] . ").";
     
     if (isset($storage["name"])) {
       $comVars[2] = input_cleanse($storage["name"]);
