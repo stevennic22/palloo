@@ -3,6 +3,7 @@ header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 define('COOKIE_FILE', 'cookie.txt');
+
 define('USERNAME', ''); //Insert Halloo Email address here
 define('PASSWORD', ''); //Insert Halloo password here
 define('PUSHOVER_API_TOKEN',''); //Insert Pushover API Token here
@@ -760,10 +761,15 @@ function availabilityToggling($togVal=true) {
     
   curl_setopt_array($ch, array(CURLOPT_URL => 'http://my.halloo.com/console/Extensions/steven',CURLOPT_POST => 1, CURLOPT_POSTFIELDS => $data,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $availHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
   $result = curl_exec($ch);
+  $responseCode = curl_getinfo($ch);
   curl_close($ch);
-  return($result);
-}
 
+  if ($responseCode["http_code"] == 200) {
+    return("Availability updated to " . $togVal);
+  } else {
+    return("Error updating Halloo availability.");
+  }
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
   if (count($_GET) == 0) {
@@ -843,7 +849,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         } else {
           $toggleRes = availabilityToggling();
         }
-        //echo "<div class='main' style='text-align: center;'>" . $toggleRes . "</div>";
+        echo "<div class='main' style='text-align: center;'>" . $toggleRes . "</div>";
         break;
       case "auto":
         //Gather information from rotation file
