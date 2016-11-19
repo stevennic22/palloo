@@ -25,29 +25,37 @@ def arrayAddition(arg,i):
   return
 
 def sendingMail():
-  global msgSetup
-  # Import the email modules we'll need
-  from email.mime.text import MIMEText
-  msg = MIMEText(msgSetup[0])
+  try:
+    global msgSetup
+    # Import the email modules we'll need
+    from email.mime.text import MIMEText
+    msg = MIMEText(msgSetup[0])
 
-  # me == the sender's email address
-  # you == the recipient's email address
-  if msgSetup[2] == "":
-    logging.warning("No title included. Inserting text 'No Subject' instead.")
-    msg['Subject'] = "No Subject"
-  else:
-    msg['Subject'] = msgSetup[2]
-  msg['From'] = "" #Put from email address
-  msg['To'] = msgSetup[1]
+    # me == the sender's email address
+    # you == the recipient's email address
+    if msgSetup[2] == "":
+      logging.warning("No title included. Inserting text 'No Subject' instead.")
+      msg['Subject'] = "No Subject"
+    else:
+      msg['Subject'] = msgSetup[2]
+    msg['From'] = "schmoops01@gmail.com"
+    msg['To'] = msgSetup[1]
 
-  # Send the message via our own SMTP server, but don't include the
-  # envelope header.
-  s = smtplib.SMTP('smtp.gmail.com', 587)
-  s.starttls()
-  s.login(msg['From'], "") #Put application specific password
-  s.sendmail(msg['From'], msg['To'], msg.as_string())
-  s.quit()
-  logging.info("Email sent.")
+    # Send the message via our own SMTP server, but don't include the
+    # envelope header.
+    s = smtplib.SMTP('smtp.gmail.com', 587)
+    s.starttls()
+    s.login(msg['From'], "txbunyratepzmivo")
+    s.sendmail(msg['From'], msg['To'], msg.as_string())
+    s.quit()
+    logging.info("Email sent.")
+  except smtplib.SMTPRecipientsRefused, e:
+    logging.error(e)
+    sys.exit(1)
+  except:
+    logging.error("Unexpected error")
+    print(sys.exc_info()[0])
+    sys.exit(1)
   
 def main(argv):
   global msgSetup
