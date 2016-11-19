@@ -10,49 +10,43 @@ define('PUSHOVER_API_TOKEN',''); //Insert Pushover API Token here
 define('PUSHBULLET_API_TOKEN',''); //Insert Pushbullet API Token here
 define('USER_AGENT', 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36');
 
-echo "<!DOCTYPE html><html><head>";
-echo '<link rel="shortcut icon" type="image/x-icon" href="https://stevenv4test.sleepex.com/favicon.ico" />';
-echo "<title>";
+$RESPONSE_TITLE = 'Palloo';
+$RESPONSE_BODY = 'Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>';
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
   if (count($_GET) == 0) {
-    echo "Palloo Help";
+    $RESPONSE_TITLE = "Palloo Help";
   } else if(isset($_GET["help"])){
-    echo "Palloo Help";
+    $RESPONSE_TITLE = "Palloo Help";
   } else if (isset($_GET["process"])) {
     $procVar = strtolower($_GET["process"]);
     switch($procVar){
       case "check":
-        echo "Palloo Check";
+        $RESPONSE_TITLE = "Palloo Check";
         break;
       case "set";
-        echo "Palloo Set";
+        $RESPONSE_TITLE = "Palloo Set";
         break;
       case "alert":
-        echo "Palloo Alert";
+        $RESPONSE_TITLE = "Palloo Alert";
         break;
       case "auto":
-        echo "Palloo Auto-Rotate";
+        $RESPONSE_TITLE = "Palloo Auto-Rotate";
         break;
       case "numswap":
-        echo "Palloo Swapping";
+        $RESPONSE_TITLE = "Palloo Swapping";
         break;
       case "avail":
-        echo "Palloo Availability";
+        $RESPONSE_TITLE = "Palloo Availability";
         break;
       default:
-        echo "Palloo Help";
+        $RESPONSE_TITLE = "Palloo Help";
         break;
     }
   } else {
-    echo "Palloo Help";
+    $RESPONSE_TITLE = "Palloo Help";
   }
 }
-echo "</title><style>.main {margin: auto;
-    //margin-left: auto;
-    //margin-right: auto;
-    //width: 90%;
-    text-align: center;}</style></head><body>";
 
 function stripper($data) {
   $data = str_replace(array("\n","\r"," "), '', $data);
@@ -774,9 +768,9 @@ function availabilityToggling($togVal=true) {
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
   if (count($_GET) == 0) {
-    echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
+    $RESPONSE_BODY = "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>";
   } else if(isset($_GET["help"])){
-    echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
+    $RESPONSE_BODY = "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>";
   } else if (isset($_GET["process"])) {
     $procVar = input_cleanse(strtolower($_GET["process"]));
     switch($procVar){
@@ -785,13 +779,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         
         if (is_String($OCUser)) {
           if (strpos($OCUser,'Error') !== False || strpos($OCUser,'error') !== False) {
-            echo "<div class='main' style='text-align: center;'>There was an error while checking the onCall user. Please contact the administrator.</div>";
+            $RESPONSE_BODY = "There was an error while checking the onCall user. Please contact the administrator.";
             $alertVars = getAlertVars(0,"steven",array("title" => "Error while checking the OnCall user","msg" => "There was an error while checking the onCall user."));
           } else {
-            echo "<div class='main' style='text-align: center;'>" . $OCUser . "</div>";
+            $RESPONSE_BODY = $OCUser;
           }
         } else {
-          echo "<div class='main' style='text-align: center;'>Unknown return type.</div>";
+          $RESPONSE_BODY = "Unknown return type.";
         }
         break;
       case "set":
@@ -800,16 +794,16 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
           $funcUpdate = setUser($setVars, 1);
           if (is_String($funcUpdate)) {
             if (strpos($funcUpdate,'Error') !== False || strpos($funcUpdate,'error') !== False) {
-              echo "<div class='main' style='text-align: center;'>There was an error while setting the onCall user. Please contact the administrator.</div>";
+              $RESPONSE_BODY = "There was an error while setting the onCall user. Please contact the administrator.";
               $alertVars = getAlertVars(0,"steven",array("title" => "Error while setting a user OnCall","msg" => "There was an error while setting the onCall user."));
             } else {
-              echo "<div class='main' style='text-align: center;'>" . $funcUpdate . "</div>";
+              $RESPONSE_BODY = $funcUpdate;
             }
           } else {
-            echo "<div class='main' style='text-align: center;'>Unknown return type.</div>";
+            $RESPONSE_BODY = "Unknown return type.";
           }
         } else {
-          echo "<div class='main' style='text-align: center;'>Please provide a valid name.</div>";
+          $RESPONSE_BODY = "Please provide a valid name.";
         }
         break;
       case "alert":
@@ -824,11 +818,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         
         for($i=0;$i < count($alertVars);$i++){
           if ($i == 0){
-            echo "<div class='main' style='text-align: center;'>Title: " . $alertVars[$i] . "</div>";
+            $RESPONSE_BODY .= "Title: " . $alertVars[$i] . "</br>";
           } else if ($i == 1){
-            echo "<div class='main' style='text-align: center;'>Message: " . $alertVars[$i] . "</div>";
+            $RESPONSE_BODY .= "Message: " . $alertVars[$i] . "</br>";
           } else {
-            //echo "<div class='main' style='text-align: center;'>" . $alertVars[$i] . "</div>";
+            //$RESPONSE_BODY .= "$alertVars[$i] . "</br>";
           }
         }
         break;
@@ -836,12 +830,12 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         if(isset($_GET["line"])){
           if(strtolower($_GET["line"]) == "office" || strtolower($_GET["line"]) == "voicemail" || strtolower($_GET["line"]) == "mobile" || strtolower($_GET["line"]) == "home") {
             $numSwapLine = swappa(ucfirst(strtolower($_GET["line"])));
-            echo "<div class='main' style='text-align: center;'>Current Line: " . $numSwapLine . "</div>";
+            $RESPONSE_BODY = "Current Line: " . $numSwapLine;
           } else {
-            echo "<div class='main' style='text-align: center;'>Please supply a valid phone line to swap to.</div>";
+            $RESPONSE_BODY = "Please supply a valid phone line to swap to.";
           }
         } else {
-          echo "<div class='main' style='text-align: center;'>Please supply a valid phone line to swap to.</div>";
+          $RESPONSE_BODY = "Please supply a valid phone line to swap to.";
         }
         break;
       case "avail":
@@ -850,7 +844,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         } else {
           $toggleRes = availabilityToggling();
         }
-        echo "<div class='main' style='text-align: center;'>" . $toggleRes . "</div>";
+        $RESPONSE_BODY = $toggleRes;
         break;
       case "auto":
         //Gather information from rotation file
@@ -866,7 +860,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
           $pyOutput = stripper($transferFileInfo[0]);
           unlink($transferfilename);
         } else {
-          echo "<div class='main' style='text-align: center;'>There was an error gathering on call username. Please try again.</div>";
+          $RESPONSE_BODY = "There was an error gathering on call username. Please try again.";
           $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run.","msg" => "There was an error gathering on call username. Please try again."));
           break;
         }
@@ -874,11 +868,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         $OCUser = checkUser(0);
         
         if(stripper($pyOutput) == stripper($OCUser) && strpos($OCUser,'Error') === False && strpos($OCUser,'error') === False) {
-          echo "<div class='main' style='text-align: center;'>The currently scheduled on-call user (" . ucfirst($pyOutput) .") is already set.</div>";
+          $RESPONSE_BODY = "The currently scheduled on-call user (" . ucfirst($pyOutput) .") is already set.";
           $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($pyOutput)));
           break;
         } else if (strpos($OCUser,'Error') !== False || strpos($OCUser,'error') !== False) {
-          echo "<div class='main' style='text-align: center;'>There was an error while setting the onCall user. Please contact the administrator.</div>";
+          $RESPONSE_BODY = "There was an error while setting the onCall user. Please contact the administrator.";
           $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => "There was an error while setting the onCall user."));
           break;
         }
@@ -894,23 +888,36 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         //If response from setting is a string and it isn't yelling about a bad name, finishing rotating in rotation file
         if ($funcUpdate != $OCUser) {
           //If the response from setting the value is yelling about a bad name, this happens.
-          echo "<div class='main' style='text-align: center;'>There was an error and something didn't update. Please try again.</div>";
+          $RESPONSE_BODY = "There was an error and something didn't update. Please try again.";
           $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => "There was an error and something didn't update. Please try again."));
         } else {
           $alertVars = getAlertVars(0,"oncall",array("title" => "You are now on call","msg" => "You have been automatically set to on call based on a schedule. Good luck!"));
-          echo "<div class='main' style='text-align: center;'>The currently scheduled on-call user (" . ucfirst($pyOutput) .") has been set.</div>";
+          $RESPONSE_BODY = "The currently scheduled on-call user (" . ucfirst($pyOutput) .") has been set.";
           if(strtolower($pyOutput) != 'steven') {
             $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($pyOutput)));
           }
         }
         break;
       default:
-        echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
+        $RESPONSE_BODY = "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>";
         break;
     }
   } else {
-    echo "<div class='main' style='text-align: center;'>Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br></div>";
+    $RESPONSE_BODY = "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>";
   }
 }
-echo "</body></html>";
+
+$htmlfilename = "return.html";
+$htmlFileInfo = [];
+$htmlhandle = fopen($htmlfilename, "r");
+while(!feof($htmlhandle)){
+  $htmlFileInfo[] = fgets($htmlhandle);
+}
+fclose($htmlhandle);
+
+$htmlFileInfo = str_replace("{{title}}", $RESPONSE_TITLE, $htmlFileInfo);
+$htmlFileInfo = str_replace("{{body}}", $RESPONSE_BODY, $htmlFileInfo);
+
+foreach($htmlFileInfo as $line) {
+  echo $line;
 ?>
