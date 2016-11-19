@@ -5,4 +5,8 @@ RewriteRule   index   index.php
   Order allow,deny
   Deny from all
 </Files>
+<Files ~ "return.html">
+  Order allow,deny
+  Deny from all
+</Files>
 RedirectMatch 403 ^.*/Ext
