@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import httplib2, os, string, logging, datetime
+import httplib2, os, string, logging, datetime, sys, sqlite3 as lite
 
 from apiclient import discovery
 import oauth2client
@@ -19,9 +19,9 @@ try:
 except ImportError:
 	flags = None
 
-SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
-CLIENT_SECRET_FILE = 'client_secret.json'
-APPLICATION_NAME = 'Google Calendar API Python Quickstart'
+SCOPES = "https://www.googleapis.com/auth/calendar.readonly"
+CLIENT_SECRET_FILE = os.path.normpath("client_secret.json")
+APPLICATION_NAME = "Google Calendar API Python Quickstart"
 
 def findName(eventString):
 	directory = {}
@@ -72,7 +72,6 @@ def theMainEvent(listOfEvents,events):
 
 def get_credentials():
 	credential_path = 'calendar-python-quickstart.json'
-
 	store = oauth2client.file.Storage(credential_path)
 	credentials = store.get()
 	if not credentials or credentials.invalid:
@@ -96,6 +95,7 @@ def main():
 	Creates a Google Calendar API service object and outputs a list of the next
 	10 events on the user's calendar.
 	"""
+  
 	credentials = get_credentials()
 	http = credentials.authorize(httplib2.Http())
 	service = discovery.build('calendar', 'v3', http=http)
@@ -121,10 +121,36 @@ def main():
 				eventNum += 1
 		finalEvent = theMainEvent(eventList,eventNum)
 		logging.info(finalEvent)
-		phpTransferFile = os.path.normpath("Ext\phptransfer")
-		transferFile = open(phpTransferFile,"w+")
-		transferFile.write(finalEvent)
-		transferFile.close()
+    
+    fileLoc = os.path.normpath('C:/xampp/extensions.db')
+    con = None
+    try:
+      if(os.path.isfile(fileLoc) != False):
+        con = lite.connect(fileLoc)
+        with con:
+          ONCALL = ["NAME","PHONE","EMAIL","SERVICE","METHOD","TOKEN","PASS"]
+          
+          cur = con.cursor()
+          cur.execute("SELECT * FROM ONCALL;")
+          data = cur.fetchone()
+          logging.info(data)
+          print(data)
+          cur.execute("SELECT * FROM EXTENSIONS WHERE NAME = '" + finalEvent +"';")
+          data = cur.fetchone()
+          logging.info(data)
+          print(data)
+          for i in len(data):
+            print(ONCALL[i])
+            if (str(data[i]) != "None")
+              cur.execute("UPDATE ONCALL set " + ONCALL[i] +" '" + str(data[i]) + "' where ID=1;")
+            else:
+              print("THIS")
+              cur.execute("UPDATE ONCALL set " + ONCALL[i] +" NULL where ID=1;")
+            #cur.execute("UPDATE ONCALL set NAME = '" + str(data[1]) + "',PHONE = '" + str(data[2]) + "',EMAIL = '" + str(data[3]) + "',SERVICE = '" + str(data[4]) + "',METHOD = '" + str(data[5]) + "',TOKEN = '" + str(data[6]) + "',PASS = 'NULL' where ID=1;")
+          
+          cur.execute("SELECT * FROM ONCALL;")
+          data = cur.fetchone()
+          logging.info(data)
 		
 if __name__ == '__main__':
 	main()
