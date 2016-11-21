@@ -54,7 +54,7 @@ function dbSetup() {
     foreach ($file_db->query('SELECT * from PASSES', PDO::FETCH_ASSOC) as $row) {
       if($row['SERVICE'] == "PUSHOVER"){
         define('PUSHOVER_API_TOKEN',$row['API_TOKEN']);
-      } else if ($row['SERVICE'] == "PUSHOVER"){
+      } else if ($row['SERVICE'] == "PUSHBULLET"){
         define('PUSHBULLET_API_TOKEN',$row['API_TOKEN']);
       }
     }
