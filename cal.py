@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import httplib2, os, string, logging, datetime, sys, sqlite3 as lite, json
+import httplib2, os, string, logging, datetime, json
 
 from apiclient import discovery
 import oauth2client

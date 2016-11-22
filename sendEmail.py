@@ -54,6 +54,7 @@ def sendingMail():
     sys.exit(1)
   except:
     logging.error("Unexpected error")
+    print(sys.exc_info()[0])
     sys.exit(1)
   
 def main(argv):

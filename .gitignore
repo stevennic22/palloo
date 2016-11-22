@@ -93,5 +93,4 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
-/testRes.php
-*.db
+*.json
