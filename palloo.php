@@ -11,37 +11,6 @@ define('USER_AGENT', 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, li
 $RESPONSE_TITLE = 'Palloo';
 $RESPONSE_BODY = 'Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>';
 
-if ($_SERVER["REQUEST_METHOD"] == "GET") {
-  if (isset($_GET["process"])) {
-    $procVar = strtolower($_GET["process"]);
-    switch($procVar){
-      case "check":
-        $RESPONSE_TITLE = "Palloo Check";
-        break;
-      case "set";
-        $RESPONSE_TITLE = "Palloo Set";
-        break;
-      case "alert":
-        $RESPONSE_TITLE = "Palloo Alert";
-        break;
-      case "auto":
-        $RESPONSE_TITLE = "Palloo Auto-Rotate";
-        break;
-      case "numswap":
-        $RESPONSE_TITLE = "Palloo Swapping";
-        break;
-      case "avail":
-        $RESPONSE_TITLE = "Palloo Availability";
-        break;
-      default:
-        $RESPONSE_TITLE = "Palloo Help";
-        break;
-    }
-  } else {
-    $RESPONSE_TITLE = "Palloo Help";
-  }
-}
-
 function jsonSetup() {
   global $extensionsJson;
   foreach($extensionsJson["palloo"]["extensions"] as $user){
@@ -82,6 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $procVar = input_cleanse(strtolower($_GET["process"]));
     switch($procVar){
       case "auto":
+        $RESPONSE_TITLE = "Palloo Auto-Rotate";
         jsonSetup();
         global $extensionsJson;
         //Gather information from rotation file
@@ -90,34 +60,41 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         #If oncall user does not match Google Calendar, set the GCal user to oncall
         break;
       case "set":
+        $RESPONSE_TITLE = "Palloo Set";
         jsonSetup();
         #Log into Halloo and set someone on call
         #If that user is on call already, do nothing
         #If that user wasn't, update on call
         break;
       case "check":
+        $RESPONSE_TITLE = "Palloo Check";
         jsonSetup();
         #Log into Halloo and see who is currently set to On Call
         #If wrong person is set to OnCall, update the local file
         break;
       case "avail":
+        $RESPONSE_TITLE = "Palloo Availability";
         jsonSetup();
         #Set whether a user is available or not
         break;
       case "swappa":
+        $RESPONSE_TITLE = "Palloo Swapping";
         jsonSetup();
         #Swap current phone line
         break;
       case "alert":
+        $RESPONSE_TITLE = "Palloo Alert";
         jsonSetup();
         #Send an alert to the currently on call user
         #Alert is likely going to come from Uptime Robot
         break;
       default:
+        $RESPONSE_TITLE = "Palloo Help";
         $RESPONSE_BODY = "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>";
         break;
     }
   } else {
+    $RESPONSE_TITLE = "Palloo Help";
     $RESPONSE_BODY = "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>";
   }
 }
