@@ -1,12 +1,13 @@
 RewriteEngine On
 RewriteRule   palloo   palloo.php
 RewriteRule   index   index.php
-<Files ~ "\.py$">
-  Order allow,deny
+
+RedirectMatch 404 /\..*$
+RedirectMatch 404 /\.git
+
+<Files ~ "\.(json|html|py|pyw|pyc|git)$">
+  Order deny,allow
   Deny from all
 </Files>
-<Files ~ "return.html">
-  Order allow,deny
-  Deny from all
-</Files>
-RedirectMatch 403 ^.*/Ext
+
+Options All -Indexes
