@@ -93,4 +93,6 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
+
 *.json
+!return.json

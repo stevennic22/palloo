@@ -6,8 +6,8 @@ header("Pragma: no-cache");
 define('COOKIE_FILE', 'cookie.txt');
 define('USER_AGENT', 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36');
 
-if(!file_exists(COOKIE_FILE)) {
-  $cookieFile = fopen(COOKIE_FILE, "w");
+if(!file_exists(realpath(COOKIE_FILE))) {
+  $cookieFile = fopen(realpath(COOKIE_FILE), "w");
   fclose($cookieFile);
 }
 
@@ -16,8 +16,6 @@ $RESPONSE_BODY = 'Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;
 
 $extensionsFile = file_get_contents("extensions.json");
 $extensionsJson = json_decode($extensionsFile, true);
-
-$GetHeaders = array("Host: my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
 
 foreach($extensionsJson["palloo"]["extensions"] as $user){
   if( $user["name"] == "Steven" ) {
@@ -43,6 +41,7 @@ if ( !defined('USERNAME') || !defined('PASSWORD') ) {
 function woops($curlHandler){
   curl_reset($curlHandler);
   $wooPostHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
+  $wooGetHeaders = array("Host: my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
 
   $fields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In');
   curl_setopt_array($curlHandler = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $wooPostHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
@@ -52,7 +51,7 @@ function woops($curlHandler){
     $redirectURL = curl_getinfo($curlHandler)["redirect_url"];
     curl_reset($curlHandler);
 
-    curl_setopt_array($curlHandler, array(CURLOPT_URL => $redirectURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $GetHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+    curl_setopt_array($curlHandler, array(CURLOPT_URL => $redirectURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $wooGetHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
     $result = curl_exec($curlHandler);
 
     curl_reset($curlHandler);
@@ -144,7 +143,8 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
       case "auto":
         $RESPONSE_TITLE = "Palloo Auto-Rotate";
         if ($extensionsJson["palloo"]["checks"]["auto"] == false) {
-          #Gather information from rotation file
+          #Check trigger in json file to see whether to continue or not
+          //Gather information from rotation file
           shell_exec("cal.py");
           
           #If oncall user does not match Google Calendar, set the GCal user to oncall
@@ -201,7 +201,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 }
 
 #Do check to see whether the response should be html or json
-$retfilename = "return.html";
+$retfilename = "return." . input_cleanse(strtolower($_GET["return"]));
 $retFileInfo = [];
 $rethandle = fopen($retfilename, "r");
 while(!feof($rethandle)){
