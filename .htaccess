@@ -5,7 +5,7 @@ RewriteRule   index   index.php
 RedirectMatch 404 /\..*$
 RedirectMatch 404 /\.git
 
-<Files ~ "\.(json|html|py|pyw|pyc|git)$">
+<Files ~ "\.(json|html|py|pyw|pyc|git|log)$">
   Order deny,allow
   Deny from all
 </Files>
