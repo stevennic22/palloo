@@ -117,7 +117,7 @@ def main():
     for event in events:
       datum = datetime.datetime.now().strftime("%Y-%m-%d")
       start = event['start'].get('dateTime', event['start'].get('date'))
-      logging.info("      " + string.lower(event["summary"]) + ": " + string.lower(start))
+      logging.info("      " + string.lower(start) + ": " + string.lower(event["summary"]))
       if(('on-call' in string.lower(event['summary']) or 'on call' in string.lower(event['summary']) or 'oncall' in string.lower(event['summary'])) and (start <= datum)):
         eventList[string.lower(event["summary"])] = [start,False]
         eventNum += 1
