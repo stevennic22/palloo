@@ -46,7 +46,7 @@ function woops($curlHandler){
   curl_setopt_array($curlHandler = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $wooPostHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
   $result = curl_exec($curlHandler);
 
-  if (curl_getinfo($curlHandler)["http_code"] == 302) {
+  if (curl_getinfo($curlHandler)["http_code"] == 302 || curl_getinfo($curlHandler)["http_code"] == 500) {
     $redirectURL = curl_getinfo($curlHandler)["redirect_url"];
     curl_reset($curlHandler);
 
@@ -207,12 +207,12 @@ function checkUser($rtype) {
   
   $result = curl_exec($ch);
 
-  if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
+  if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
     $ch = woops($ch);
     curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => 'http://my.halloo.com/ext/?view=User%20Settings&extn=oncall&tab=Forwarding',CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
     $result = curl_exec($ch);
 
-    if($getInfo["http_code"] == 302 || $getInfo["redirect_url"] == "http://my.halloo.com/") {
+    if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
       return "Error: Cannot log into Halloo.";
     }
   }
@@ -276,12 +276,12 @@ function setUser($userToSet, $rType) {
     curl_setopt_array($ch, array(CURLOPT_URL => $OCURL . "Forwarding",CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
     $result = curl_exec($ch);
 
-    if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
+    if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
       $ch = woops($ch);
       curl_setopt_array($ch, array(CURLOPT_URL => $OCURL . "Forwarding",CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       $result = curl_exec($ch);
 
-      if($getInfo["http_code"] == 302 || $getInfo["redirect_url"] == "http://my.halloo.com/") {
+      if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
         return "Error: Cannot log into Halloo.";
       }
     }
@@ -395,6 +395,13 @@ function setUser($userToSet, $rType) {
 }
 
 function setAvailability($togVal=true) {
+
+  if($togVal === true || $togVal == strtolower("on") || $togVal == strtolower("avail")) {
+    $togVal = "AVAIL";
+  } else if ($togVal === false || $togVal == strtolower("off") || $togVal == strtolower("unavail")) {
+    $togVal = "UNAVAIL";
+  }
+
   $data = "_METHOD=PUT&qstatus=".$togVal;
   $availHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
     
@@ -403,14 +410,14 @@ function setAvailability($togVal=true) {
   $responseCode = curl_getinfo($ch);
 
 
-  if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
+  if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
     $ch = woops($ch);
   
     curl_setopt_array($ch, array(CURLOPT_URL => 'http://my.halloo.com/console/Extensions/steven',CURLOPT_POST => 1, CURLOPT_POSTFIELDS => $data,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $availHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
     $result = curl_exec($ch);
     $responseCode = curl_getinfo($ch);
 
-    if($getInfo["http_code"] == 302 || $getInfo["redirect_url"] == "http://my.halloo.com/") {
+    if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
       header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
       exit();
     }
@@ -432,7 +439,7 @@ function swapNumbers($line) {
   
   $result = curl_exec($ch);
 
-  if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
+  if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
     $ch = woops($ch);
     
     curl_setopt_array($ch, array(CURLOPT_URL => $myFirstURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
