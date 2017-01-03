@@ -564,7 +564,6 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
       case "auto":
         $RESPONSE_TITLE = "Palloo Auto-Rotate";
         if ($extensionsJson["palloo"]["checks"]["auto"] == true) {
-          #Gather information from rotation file
           shell_exec("cal.py");
 
           $HOCUser = checkUser(0);
@@ -617,9 +616,6 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         break;
       case "set":
         $RESPONSE_TITLE = "Palloo Set";
-        #Log into Halloo and set someone on call
-        #If that user is on call already, do nothing
-        #If that user wasn't, update on call
         if (isset($_GET["name"])) {
           $nameToSet = input_cleanse(strtolower($_GET["name"]));
           $setRes = setUser($nameToSet, 1);
@@ -636,7 +632,12 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
       case "avail":
         $RESPONSE_TITLE = "Palloo Availability";
         if ($extensionsJson["palloo"]["checks"]["avail"] == true) {
-          #Set whether a user is available or not
+          if(isset($_GET["set"])){
+            $toggleRes = setAvailability(stripper(strtolower($_GET["set"])));
+          } else {
+            $toggleRes = setAvailability();
+          }
+          $RESPONSE_BODY = $toggleRes;
         } else {
           $RESPONSE_BODY = "Availability switching is unavailable at this time.";
         }
@@ -644,9 +645,18 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
       case "swappa":
         $RESPONSE_TITLE = "Palloo Swapping";
         if ($extensionsJson["palloo"]["checks"]["swap"] == true) {
-          #Swap current phone line
+          if(isset($_GET["line"])){
+            if(strtolower($_GET["line"]) == "office" || strtolower($_GET["line"]) == "voicemail" || strtolower($_GET["line"]) == "mobile" || strtolower($_GET["line"]) == "home") {
+              $numSwapLine = swapNumbers(ucfirst(strtolower($_GET["line"])));
+              $RESPONSE_BODY = "Current Line: " . $numSwapLine;
+            } else {
+              $RESPONSE_BODY = "Please supply a valid phone line to swap to.";
+            }
+          } else {
+            $RESPONSE_BODY = "Please supply a valid phone line to swap to.";
+          }
         } else {
-          $RESPONSE_BODY = "Extension switching is unavailable at this time.";
+          $RESPONSE_BODY = "Extension swapping is unavailable at this time.";
         }
         break;
       case "alert":
@@ -656,14 +666,23 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
           $getStorage = $_GET;
 
           if (isset($getStorage["from"]) && input_cleanse($getStorage["from"]) == "uptime") {
-            //Check if user should be getting alert
-            $alertResponse = sendAlert(1,"oncall",getStorage);
+            if ($extensionsJson["palloo"]["oncall"]["alert"] == true) {
+              $alertResponse = sendAlert(1,"oncall",getStorage);
+            }
           } else if (isset($getStorage["name"])) {
-            //Check if user should be getting alert
-            $alertResponse = sendAlert(0,$getStorage["name"],$getStorage);
+            foreach($extextensionsJsonJson["palloo"]["extensions"] as $user) {
+              if(input_cleanse(strtolower($getStorage["name"])) == input_cleanse(strtolower($user["name"]))) {
+                if ($user["alert"] == true) {
+                  $alertResponse = sendAlert(0,$getStorage["name"],$getStorage);
+                }
+                break;
+              }
+            }
+            $RESPONSE_BODY = "Alert sending to that user is unavailable at this time.";
           } else {
-            //Check if user should be getting alert
-            $alertResponse = sendAlert(0,"oncall",getStorage);
+            if ($extensionsJson["palloo"]["oncall"]["alert"] == true) {
+              $alertResponse = sendAlert(0,"oncall",getStorage);
+            }
           }
         } else {
           $RESPONSE_BODY = "Alert sending is unavailable at this time.";
