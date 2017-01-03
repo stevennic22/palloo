@@ -24,13 +24,13 @@ CLIENT_SECRET_FILE = os.path.normpath("client_secret.json")
 APPLICATION_NAME = "Google Calendar API Python Quickstart"
 
 def findName(eventString):
-  directory = {}
-  for(dirpath,dirnames,filenames) in os.walk('Ext'):
-    for file in filenames:
-      if(file != "rotation" and file != "oncall" and file != "phptransfer"):
-        if(file in string.lower(eventString)):
-          directory[file] = string.lower(eventString).find(file)
-  return(min(directory, key=directory.get))
+  fileLoc = os.path.normpath('extensions.json')
+  with open(fileLoc,'r') as extensionsFile:
+    ext = json.load(extensionsFile)
+  
+  for users in ext["palloo"]["extensions"]:
+    if (string.lower(users["name"]) in string.lower(eventString)):
+      return string.lower(users["name"])
 
 def theMainEvent(listOfEvents,events):
   if(events == 1):
@@ -117,7 +117,7 @@ def main():
     for event in events:
       datum = datetime.datetime.now().strftime("%Y-%m-%d")
       start = event['start'].get('dateTime', event['start'].get('date'))
-      logging.info(event["summary"] + [start,False])
+      logging.info("      " + string.lower(event["summary"]) + ": " + string.lower(start))
       if(('on-call' in string.lower(event['summary']) or 'on call' in string.lower(event['summary']) or 'oncall' in string.lower(event['summary'])) and (start <= datum)):
         eventList[string.lower(event["summary"])] = [start,False]
         eventNum += 1
@@ -135,8 +135,9 @@ def main():
         if i["name"].lower() == finalEvent:
           data["palloo"]["oncall"] = i
           break
-    with open(fileLoc, 'w') as extensionsFile:
-      json.dump(data, extensionsFile)
+      with open(fileLoc, 'w') as extensionsFile:
+        json.dump(data, extensionsFile)
+      logging.info("Extensions file updated to match Google Calendar")
 
 if __name__ == '__main__':
   main()
