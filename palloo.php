@@ -218,6 +218,10 @@ function checkUser($rtype) {
   }
 
   $html = new DOMDocument();
+  $internalErrors = libxml_use_internal_errors(true);
+  $html->loadHtml($result);
+  
+  $xpath = new DOMXpath($html);
   $fwd = $xpath->query("//*[contains(@name, 'fwd_')]");
   $hallooResponse = $fwd->item(2)->getAttribute('value');
   curl_close($ch);
@@ -226,7 +230,7 @@ function checkUser($rtype) {
   #Else, search for that matching number
   if (stripper($hallooResponse) == stripper($extJson["palloo"]["oncall"]["phone"])) {
     if ($rtype == 1) {
-      return "On Call user is " . ucfirst($extJson["palloo"]["oncall"]["name"]);
+      return "On Call user is " . ucfirst($extJson["palloo"]["oncall"]["name"]) . ".";
     } else {
       return $extJson["palloo"]["oncall"]["name"];
     }
@@ -255,6 +259,7 @@ function checkUser($rtype) {
 }
 
 function setUser($userToSet, $rType) {
+  $extJson = json_decode(file_get_contents("extensions.json"), true);
   $userBeingSet = [];
   foreach($extJson["palloo"]["extensions"] as $user) {
     if(strtolower(stripper($userToSet)) == strtolower(stripper($user["name"]))) {
@@ -273,7 +278,7 @@ function setUser($userToSet, $rType) {
     
     $getHeaders = array("Host: my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
     
-    curl_setopt_array($ch, array(CURLOPT_URL => $OCURL . "Forwarding",CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+    curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => $OCURL . "Forwarding",CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
     $result = curl_exec($ch);
 
     if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
@@ -312,10 +317,10 @@ function setUser($userToSet, $rType) {
       $TSBoundary = "---------------------------" . randomKey(16);
       
       $pOCForHead = array("Host: my.halloo.com","Origin: " . $OCURL . "Forwarding","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Referer: " . $OCURL . "Forwarding","Cache-Control: no-cache");
-      $pOCGenHead = array("Host: my.halloo.com","Origin: " . $OCURL . "General","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=$onCallBoundary","Referer: " . $OCURL . "General","Cache-Control: no-cache");
+      $pOCGenHead = array("Host: my.halloo.com","Origin: " . $OCURL . "General","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=" . $OCBoundary,"Referer: " . $OCURL . "General","Cache-Control: no-cache");
       
       $pTSForHead = array("Host: my.halloo.com","Origin: " . $TSURL . "Forwarding","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Referer: " . $TSURL . "Forwarding","Cache-Control: no-cache");
-      $pTSGenHead = array("Host: my.halloo.com","Origin: " . $TSURL . "General","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=$tsEmerBoundary","Referer: " . $TSURL . "General","Cache-Control: no-cache");
+      $pTSGenHead = array("Host: my.halloo.com","Origin: " . $TSURL . "General","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=" . $TSBoundary,"Referer: " . $TSURL . "General","Cache-Control: no-cache");
       
       $OCString = $OCHome.'='.stripper($userBeingSet["phone"]).'&'.$OCOffice.'='.stripper($userBeingSet["phone"]).'&'.$OCMobile.'='.stripper($userBeingSet["phone"]).'&Submit=Save+Changes';
       $phoMail = phoMail($userBeingSet["phone"],$userBeingSet["service"]);
@@ -332,7 +337,7 @@ function setUser($userToSet, $rType) {
       curl_setopt_array($ch, array(CURLOPT_URL => $OCURL . "General",CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       
       $result = curl_exec($ch);
-      $OCPost = resultsHandler($result,$phoMail,$onCallBoundary);
+      $OCPost = resultsHandler($result,$phoMail,$OCBoundary);
       curl_reset($ch);
       
       //On-Call General page POST set up and executed
@@ -370,7 +375,7 @@ function setUser($userToSet, $rType) {
       curl_setopt_array($ch, array(CURLOPT_URL => $TSURL . "General",CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       
       $result = curl_exec($ch);
-      $TSPost = resultsHandler($result,$phoMail,$tsEmerBoundary);
+      $TSPost = resultsHandler($result,$phoMail,$TSBoundary);
       curl_reset($ch);
       
       //tsEmer General page POST set up and executed
@@ -626,7 +631,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         if (isset($_GET["name"])) {
           $nameToSet = input_cleanse(strtolower($_GET["name"]));
           $setRes = setUser($nameToSet, 1);
-          if (strpos(strtolower($checkRes), 'error') !== False) {
+          if (strpos(strtolower($setRes), 'error') !== False) {
             $RESPONSE_BODY = "There was an error while setting the onCall user. Please contact the administrator.";
             sendAlert(0,"steven",array("title" => "Error while setting a user OnCall","msg" => "There was an error while setting the onCall user."));
           } else {

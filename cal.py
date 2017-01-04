@@ -8,9 +8,11 @@ import oauth2client
 from oauth2client import client
 from oauth2client import tools
 
+fileLoc = os.path.normpath('extensions.json')
+
 if(os.path.isdir("LOGS") == False):
   os.makedirs("LOGS")
-logFileName = os.path.normpath("LOGS\CalChecking") + datetime.datetime.now().strftime("%y%m%d%H%M%S") + ".LOG"
+logFileName = os.path.normpath("LOGS\CalCheck") + datetime.datetime.now().strftime("%y%m%d%H%M%S") + ".LOG"
 logging.basicConfig(format='%(levelname)s: %(message)s', filename=logFileName,level=logging.INFO)
 
 try:
@@ -24,7 +26,7 @@ CLIENT_SECRET_FILE = os.path.normpath("client_secret.json")
 APPLICATION_NAME = "Google Calendar API Python Quickstart"
 
 def findName(eventString):
-  fileLoc = os.path.normpath('extensions.json')
+  global fileLoc
   with open(fileLoc,'r') as extensionsFile:
     ext = json.load(extensionsFile)
   
@@ -124,7 +126,7 @@ def main():
     finalEvent = theMainEvent(eventList,eventNum)
     logging.info(finalEvent)
 
-    fileLoc = os.path.normpath('extensions.json')
+    global fileLoc
     with open(fileLoc,'r') as extensionsFile:
       data = json.load(extensionsFile)
 

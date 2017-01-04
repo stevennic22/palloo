@@ -16,11 +16,11 @@ def errPrint():
 def arrayAddition(arg,i):
   global msgSetup
   if i == 1:
-    logging.info("Adding '" + arg + "' (recipient) to the list.")
+    logging.info("Adding '" + str(arg) + "' (recipient) to the list.")
   elif i == 0:
-    logging.info("Adding '" + arg + "' (message) to the list.")
+    logging.info("Adding '" + str(arg) + "' (message) to the list.")
   elif i == 2:
-    logging.info("Adding '" + arg + "' (title) to the list.")
+    logging.info("Adding '" + str(arg) + "' (title) to the list.")
   msgSetup[i]=arg
   return
 
@@ -54,7 +54,7 @@ def sendingMail():
     sys.exit(1)
   except:
     logging.error("Unexpected error")
-    print(sys.exc_info()[0])
+    logging.error(sys.exc_info()[0])
     sys.exit(1)
   
 def main(argv):
