@@ -655,6 +655,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         }
         break;
       case "swappa":
+      case "numswap":
         $RESPONSE_TITLE = "Palloo Swapping";
         if ($extensionsJson["palloo"]["checks"]["swap"] == true) {
           if(isset($_GET["line"])){

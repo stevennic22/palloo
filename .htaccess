@@ -2,10 +2,13 @@ RewriteEngine On
 RewriteRule   palloo   palloo.php
 RewriteRule   index   index.php
 
-RedirectMatch 404 /\..*$
+ErrorDocument 404 /404.php
+ErrorDocument 403 /403.php
+ErrorDocument 500 /500.php
+
 RedirectMatch 404 /\.git
 
-<Files ~ "\.(json|html|py|pyw|pyc|git|log)$">
+<Files ~ "\.(json|html|py|pyw|pyc|log)$">
   Order deny,allow
   Deny from all
 </Files>
