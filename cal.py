@@ -13,7 +13,14 @@ fileLoc = os.path.normpath('extensions.json')
 if(os.path.isdir("LOGS") == False):
   os.makedirs("LOGS")
 logFileName = os.path.normpath("LOGS\CalCheck") + datetime.datetime.now().strftime("%y%m%d%H%M%S") + ".LOG"
-logging.basicConfig(format='%(levelname)s: %(message)s', filename=logFileName,level=logging.INFO)
+loglevel = logging.INFO
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
+handler = logging.FileHandler(logFileName)
+formatter = logging.Formatter("[%(asctime)s] '%(levelname)s: {%(message)s}")
+handler.setFormatter(formatter)
+log.addHandler(handler)
 
 try:
   import argparse
@@ -69,7 +76,7 @@ def theMainEvent(listOfEvents,events):
           onCallInEvent = findName(event)
           return(onCallInEvent)
   else:
-    logging.warning(events)
+    log.warning(events)
     return("Well... Do something 3")
 
 def get_credentials():
@@ -83,7 +90,7 @@ def get_credentials():
       credentials = tools.run_flow(flow, store, flags)
     else: # Needed only for compatibility with Python 2.6
       credentials = tools.run(flow, store)
-    logging.warning('Storing credentials to ' + credential_path)
+    log.warning('Storing credentials to ' + credential_path)
   return credentials
 
 def main():
@@ -103,35 +110,35 @@ def main():
   service = discovery.build('calendar', 'v3', http=http)
 
   now = datetime.datetime.utcnow().isoformat() + 'Z' # 'Z' indicates UTC time
-  #logging.info('Getting some events')
+  #log.info('Getting some events')
   eventsResult = service.events().list(
         calendarId='support@sleepex.com', timeMin=now, maxResults=10, singleEvents=True,
     orderBy='startTime').execute()
   events = eventsResult.get('items', [])
 
   if not events:
-    logging.warning('No upcoming events found.')
+    log.warning('No upcoming events found.')
   else:
     finalEvent = None
     eventList = {}
     eventNum = 0
-    logging.info("Logging events:")
+    log.info("Logging events:")
     for event in events:
       datum = datetime.datetime.now().strftime("%Y-%m-%d")
       start = event['start'].get('dateTime', event['start'].get('date'))
-      logging.info("      " + string.lower(start) + ": " + string.lower(event["summary"]))
+      log.info("      " + string.lower(start) + ": " + string.lower(event["summary"]))
       if(('on-call' in string.lower(event['summary']) or 'on call' in string.lower(event['summary']) or 'oncall' in string.lower(event['summary'])) and (start <= datum)):
         eventList[string.lower(event["summary"])] = [start,False]
         eventNum += 1
     finalEvent = theMainEvent(eventList,eventNum)
-    logging.info(finalEvent)
+    log.info(finalEvent)
 
     global fileLoc
     with open(fileLoc,'r') as extensionsFile:
       data = json.load(extensionsFile)
 
     if data["palloo"]["oncall"]["name"].lower() == finalEvent:
-      logging.info("Google Calendar matches extension file")
+      log.info("Google Calendar matches extension file")
     else:
       for i in data["palloo"]["extensions"]:
         if i["name"].lower() == finalEvent:
@@ -139,7 +146,7 @@ def main():
           break
       with open(fileLoc, 'w') as extensionsFile:
         json.dump(data, extensionsFile)
-      logging.info("Extensions file updated to match Google Calendar")
+      log.info("Extensions file updated to match Google Calendar")
 
 if __name__ == '__main__':
   main()

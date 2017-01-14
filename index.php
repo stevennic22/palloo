@@ -1,31 +1,84 @@
 <?php
-	if (!empty($_SERVER['HTTPS']) && ('on' == $_SERVER['HTTPS'])) {
-		$uri = 'https://';
-    $uri .= $_SERVER['HTTP_HOST'];
-    header('Location: '.$uri);
-	} else {
-		$uri = 'http://';
-	}
+$logHandler = '';
+$fLogPath = '';
 
-	$RESPONSE_TITLE = 'Index';
-	$RESPONSE_BODY = '<a href="/Halloo/palloo.php">Palloo</a>';
+function make_log(){
+  global $logHandler;
+  global $fLogPath;
+  $logDir = "LOGS";
+  if(!is_dir($logDir)){
+    mkdir($logDir);
+  }
 
-	$retfilename = "return.html";
-	if (!file_exists($retfilename)) {
-		header($_SERVER['SERVER_PROTOCOL'] . ' 404 File Not Found', true, 404);
-		exit;
-	}
-	$retFileInfo = [];
-	$rethandle = fopen($retfilename, "r");
-	while(!feof($rethandle)){
-		$retFileInfo[] = fgets($rethandle);
-	}
-	fclose($rethandle);
+  $logFileName = basename(__FILE__, '.php') . date("ymdHis") . ".LOG";
 
-	$retFileInfo = str_replace("[[title]]", $RESPONSE_TITLE, $retFileInfo);
-	$retFileInfo = str_replace("[[body]]", $RESPONSE_BODY, $retFileInfo);
+  $fLogPath = $logDir . "\\" . $logFileName;
+  if (!file_exists($fLogPath)) {
+    touch($fLogPath);
+  }
 
-	foreach($retFileInfo as $line) {
-		echo $line;
-	}
+  $logHandler = fopen($fLogPath, 'w+');
+  fwrite($logHandler,date("[Y-m-d H:i:s] ") . "Log file created\r\n\r\n");
+}
+
+function log_out($msg, $deleteMe = false){
+  global $logHandler;
+
+  if ($deleteMe === false) {
+    if ($logHandler == '') {
+      make_log();
+    }
+
+    $msg = date("[Y-m-d H:i:s] ").$msg."\r\n\r\n";
+
+    try {
+      flock($logHandler, LOCK_EX);
+      fwrite($logHandler, $msg);
+      flock($logHandler, LOCK_UN);
+    } catch (Exception $e) {
+      echo "Error: " . $e->getMessage() . "</br>";
+    }
+  } else {
+    global $fLogPath;
+    fclose($logHandler);
+    unlink($fLogPath);
+  }
+}
+
+log_out("Redirecting to HTTPS if server has it enabled.");
+if (!empty($_SERVER['HTTPS']) && ('on' == $_SERVER['HTTPS'])) {
+	$uri = 'https://';
+	$uri .= $_SERVER['HTTP_HOST'];
+	header('Location: '.$uri);
+} else {
+	$uri = 'http://';
+}
+
+$RESPONSE_TITLE = 'Index';
+log_out("Title: ". $RESPONSE_TITLE);
+$RESPONSE_BODY = '<a href="/Halloo/palloo.php">Palloo</a>';
+log_out("Body: ". $RESPONSE_BODY);
+
+$retfilename = "return.html";
+if (!file_exists($retfilename)) {
+	header($_SERVER['SERVER_PROTOCOL'] . ' 404 File Not Found', true, 404);
+	exit;
+}
+
+log_out("Opening template...");
+$retFileInfo = [];
+$rethandle = fopen($retfilename, "r");
+while(!feof($rethandle)){
+  $retFileInfo[] = fgets($rethandle);
+}
+fclose($rethandle);
+
+log_out("Replacing default template strings...");
+$retFileInfo = str_replace("[[title]]", $RESPONSE_TITLE, $retFileInfo);
+$retFileInfo = str_replace("[[body]]", $RESPONSE_BODY, $retFileInfo);
+
+log_out("Returning template information...");
+foreach($retFileInfo as $line) {
+  echo $line;
+}
 ?>
