@@ -207,6 +207,9 @@ function phoMail ($number, $service) {
     case "sprint":
       $to = $number . "@messaging.sprintpcs.com";
       break;
+    default:
+      $to = "Error: Not a supported service";
+      break;
   }
   log_out("Phomail: " . $to);
   return $to;   
@@ -616,10 +619,12 @@ function alertOutput($file,$comVars) {
       pushOver(stripper($file["token"]), $comVars[0], $comVars[1]);
       break;
     case "sms":
-      if(stripper($file["service"]) != 'GoogleFi' && stripper($file["service"]) != 'AT&T' && stripper($file["service"]) != 'Sprint' && stripper($file["service"]) != 'T-Mobile' && stripper($file["service"]) != 'Verizon') {
+      $smsMail = phoMail(stripper($file["phone"],$file["service"]);
+      
+      if(strpos(strtolower($smsMail), 'error') !== False) {
         sendAnEmail(stripper($file["email"]), $comVars[0], $comVars[1]);
       } else {
-        sendAnEmail(phoMail(stripper($file["phone"]), $file["service"]), $comVars[0], $comVars[1]);
+        sendAnEmail($smsMail, $comVars[0], $comVars[1]);
       }
       break;
     case "pushbullet":
