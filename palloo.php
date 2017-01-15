@@ -20,13 +20,9 @@ $RESPONSE_BODY = 'Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;
 log_out("Pulling contents of extensions.json");
 $extensionsJson = json_decode(file_get_contents("extensions.json"), true);
 
-foreach($extensionsJson["palloo"]["extensions"] as $user) {
-  if( $user["name"] == "Steven" ) {
-    log_out("Defining Halloo settings");
-    define('USERNAME', $user['email']);
-    define('PASSWORD', $user['pass']);
-  }
-}
+log_out("Defining Halloo settings");
+define('USERNAME', $extensionsJson["palloo"]["admin"]["email"]);
+define('PASSWORD', $extensionsJson["palloo"]["admin"]["pass"]);
 
 log_out("Defining push settings");
 foreach($extensionsJson["palloo"]["creds"] as $credentials) {
@@ -739,11 +735,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
           if(strpos(strtolower($HOCUser), 'error') !== False) {
             $RESPONSE_BODY = "There was an error while checking the onCall user. Administrator has been contacted.";
-            sendAlert(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
+            sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
             break;
           } else if (stripper($extensionsJson["palloo"]["oncall"]["name"]) == stripper($HOCUser)) {
             $RESPONSE_BODY = "The currently scheduled on-call user (" . ucfirst($HOCUser) .") is already set.";
-            sendAlert(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
+            sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
             break;
           }
 
@@ -754,18 +750,18 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
           if(strpos(strtolower($HOCUser), 'error') !== False) {
             $RESPONSE_BODY = "There was an error while checking the onCall user. Administrator has been contacted.";
-            sendAlert(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
+            sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
             break;
           } else if ($setRes != $HOCUser) {
             $RESPONSE_BODY = "There was an error and something didn't update. Please try again.";
-            sendAlert(0,"steven",array("title" => "OnCall Script has run","msg" => "There was an error and something didn't update. Please try again."));
+            sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => "There was an error and something didn't update. Please try again."));
             break;
           } else {
             //Check if oncall should be receiving alert
             sendAlert(0,"oncall",array("title" => "You are now on call","msg" => "You have been automatically set to on call based on a schedule. Good luck!"));
             $RESPONSE_BODY = "The currently scheduled on-call user (" . ucfirst($HOCUser) .") has been set.";
             if(strtolower($HOCUser) != 'steven') {
-              sendAlert(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
+              sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
             }
             break;
           }
@@ -781,7 +777,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         if (strpos(strtolower($checkRes), 'error') !== False) {
           $RESPONSE_BODY = "There was an error while checking the onCall user. Administrator has been contacted.";
           log_out("General error when checking onCall user");
-          sendAlert(0,"steven",array("title" => "OnCall Script has run","msg" => "There was an error checking the OnCall user. Please try again."));
+          sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => "There was an error checking the OnCall user. Please try again."));
         } else {
           $RESPONSE_BODY = $checkRes;
         }
@@ -796,7 +792,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             log_out("General error with setting.");
             $RESPONSE_BODY = "There was an error while setting the onCall user. Please contact the administrator.";
             log_out("Contacting administrator");
-            sendAlert(0,"steven",array("title" => "Error while setting a user OnCall","msg" => "There was an error while setting the onCall user."));
+            sendAlert(0,"admin",array("title" => "Error while setting a user OnCall","msg" => "There was an error while setting the onCall user."));
           } else {
             $RESPONSE_BODY = $setRes;
           }
