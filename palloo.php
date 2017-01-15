@@ -619,7 +619,7 @@ function alertOutput($file,$comVars) {
       pushOver(stripper($file["token"]), $comVars[0], $comVars[1]);
       break;
     case "sms":
-      $smsMail = phoMail(stripper($file["phone"],$file["service"]);
+      $smsMail = phoMail(stripper($file["phone"]),$file["service"]);
       
       if(strpos(strtolower($smsMail), 'error') !== False) {
         sendAnEmail(stripper($file["email"]), $comVars[0], $comVars[1]);
@@ -649,12 +649,16 @@ function sendAlert($from,$to = "oncall",$storage = array()) {
   
   if ($to == "oncall") {
     if ($extJson["palloo"]["oncall"]["alert"] == false) {
+      log_out("Alert sending to this user is unavailable at this time.");
       return "Alert sending to this user is unavailable at this time.";
     }
+  } else if ($to == "admin") {
+    log_out("Message to admin, ignore protocols.");
   } else {
     foreach($extJson["palloo"]["extensions"] as $user) {
       if(input_cleanse(strtolower($to)) == input_cleanse(strtolower($user["name"]))) {
         if ($user["alert"] == false) {
+          log_out("Alert sending to this user is unavailable at this time.");
           return "Alert sending to this user is unavailable at this time.";
         }
         break;
@@ -712,8 +716,8 @@ function sendAlert($from,$to = "oncall",$storage = array()) {
     }
   }
 
-  if (strtolower(stripper($to)) == "oncall") {
-    alertOutput($extJson["oncall"],$comVars);
+  if (strtolower(stripper($to)) == "oncall" || strtolower(stripper($to)) == "admin") {
+    alertOutput($extJson[$to],$comVars);
     return $comVars;
   } else {
     foreach($extJson["palloo"]["extensions"] as $user) {
