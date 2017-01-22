@@ -62,7 +62,6 @@ function make_log(){
 }
 
 function log_out($msg, $deleteMe = false){
-  echo $deleteMe;
   global $logHandler;
 
   if ($deleteMe === false) {
@@ -127,7 +126,7 @@ function input_cleanse($data) {
 
 function pushOver($user, $title, $msg) {
   log_out("Sending pushover notification");
-  log_out("To: " . $email);
+  log_out("To: " . $user);
   log_out("Title: " . $title);
   log_out("Msg: " . $msg);
   curl_setopt_array($ch = curl_init(), array(
@@ -548,15 +547,18 @@ function setUser($userToSet, $rType) {
   }
 }
 
-function setAvailability($togVal=true) {
-
-  if($togVal === true || $togVal == strtolower("on") || $togVal == strtolower("avail")) {
+function setAvailability($togVal="true") {
+  
+  if($togVal == "true" || $togVal == strtolower("on") || $togVal == strtolower("avail")) {
     $togVal = "AVAIL";
-  } else if ($togVal === false || $togVal == strtolower("off") || $togVal == strtolower("unavail")) {
+  } else if ($togVal == "false" || $togVal == strtolower("off") || $togVal == strtolower("unavail")) {
     $togVal = "UNAVAIL";
+  } else {
+    log_out("Invalid option: " . $togVal);
+    return("Invalid option: " . $togVal);
   }
 
-  log_out("Updating Halloo avialability to: " . $togVal);
+  log_out("Updating Halloo availability to: " . $togVal);
 
   $data = "_METHOD=PUT&qstatus=".$togVal;
   $availHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
@@ -628,14 +630,14 @@ function alertOutput($file,$comVars) {
       }
       break;
     case "pushbullet":
-      if ($file["token"] != Null) {
+      if ($file["token"] != "") {
         pushBullet($file["token"], $comVars[0], $comVars[1]);
       } else {
         pushBullet($file["token"], $comVars[0], $comVars[1]);
       }
       break;
     case "email":
-      if ($file["token"] != Null) {
+      if ($file["token"] != "") {
         sendAnEmail(stripper($file["token"]), $comVars[0], $comVars[1]);
       } else {
         sendAnEmail(stripper($file["email"]), $comVars[0], $comVars[1]);
@@ -717,12 +719,12 @@ function sendAlert($from,$to = "oncall",$storage = array()) {
   }
 
   if (strtolower(stripper($to)) == "oncall" || strtolower(stripper($to)) == "admin") {
-    alertOutput($extJson[$to],$comVars);
+    alertOutput($extJson["palloo"][$to],$comVars);
     return $comVars;
   } else {
     foreach($extJson["palloo"]["extensions"] as $user) {
-      if (input_cleanse(strtolower($user["name"])) == input_cleanse(strtolower($getStorage["name"]))) {
-        alertOutput($user["name"],$comVars);
+      if (input_cleanse(strtolower($user["name"])) == input_cleanse(strtolower($storage["name"]))) {
+        alertOutput($user,$comVars);
         break 1;
       }
     }
@@ -860,16 +862,20 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
               $alertResponse = sendAlert(1,"oncall",getStorage);
             }
           } else if (isset($getStorage["name"])) {
-            foreach($extextensionsJsonJson["palloo"]["extensions"] as $user) {
-              if(input_cleanse(strtolower($getStorage["name"])) == input_cleanse(strtolower($user["name"]))) {
-                if ($user["alert"] == true) {
-                  $alertResponse = sendAlert(0,$getStorage["name"],$getStorage);
+            if (input_cleanse(strtolower($getStorage["name"] != "oncall")) && input_cleanse(strtolower($getStorage["name"] != "admin"))) {
+              foreach($extensionsJson["palloo"]["extensions"] as $user) {
+                if(input_cleanse(strtolower($getStorage["name"])) == input_cleanse(strtolower($user["name"]))) {
+                  if ($user["alert"] == true) {
+                    $alertResponse = sendAlert(0,$getStorage["name"],$getStorage);
+                  }
+                  break;
                 }
-                break;
               }
+              log_out("Alerts are disabled for this user");
+              $RESPONSE_BODY = "Alert sending to that user is unavailable at this time.";
+            } else {
+              $alertResponse = sendAlert(0,$getStorage["name"],$getStorage);
             }
-            log_out("Alerts are disabled for this user");
-            $RESPONSE_BODY = "Alert sending to that user is unavailable at this time.";
           } else {
             if ($extensionsJson["palloo"]["oncall"]["alert"] == true) {
               $alertResponse = sendAlert(0,"oncall",getStorage);
@@ -880,7 +886,8 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
           $RESPONSE_BODY = "Alert sending is unavailable at this time.";
         }
 
-        if(gettype($RESPONSE_BODY) != 'string') {
+        if(gettype($RESPONSE_BODY) != 'string' || $RESPONSE_BODY == "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>") {
+          $RESPONSE_BODY = "";
           for($i=0;$i < count($alertResponse);$i++) {
             if ($i == 0){
               $RESPONSE_BODY .= "Title: " . $alertResponse[$i] . "</br>";
