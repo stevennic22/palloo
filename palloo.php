@@ -859,7 +859,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
           if (isset($getStorage["from"]) && input_cleanse($getStorage["from"]) == "uptime") {
             log_out("Uptime Robot notification");
             if ($extensionsJson["palloo"]["oncall"]["alert"] == true) {
-              $alertResponse = sendAlert(1,"oncall",getStorage);
+              $alertResponse = sendAlert(1,"oncall",$getStorage);
             }
           } else if (isset($getStorage["name"])) {
             if (input_cleanse(strtolower($getStorage["name"] != "oncall")) && input_cleanse(strtolower($getStorage["name"] != "admin"))) {
