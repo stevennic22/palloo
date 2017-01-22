@@ -14,7 +14,7 @@ function make_log(){
     mkdir($logDir);
   }
 
-  $logFileName = basename(__FILE__, '.php') . date("ymdHis") . ".LOG";
+  $logFileName = "403Error" . date("ymdHis") . ".LOG";
 
   $fLogPath = $logDir . "\\" . $logFileName;
   if (!file_exists($fLogPath)) {
