@@ -46,12 +46,10 @@ function log_out($msg, $deleteMe = false){
 }
 
 log_out("Redirecting to HTTPS if server has it enabled.");
-if (!empty($_SERVER['HTTPS']) && ('on' == $_SERVER['HTTPS'])) {
+if (empty($_SERVER['HTTPS'])) {
 	$uri = 'https://';
 	$uri .= $_SERVER['HTTP_HOST'];
 	header('Location: '.$uri);
-} else {
-	$uri = 'http://';
 }
 
 $RESPONSE_TITLE = 'Index';
