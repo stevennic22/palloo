@@ -5,7 +5,14 @@ import os, sys, getopt, smtplib, logging, datetime
 if(os.path.isdir("LOGS") == False):
   os.makedirs("LOGS")
 logFileName = os.path.normpath("LOGS\sendMail") + datetime.datetime.now().strftime("%y%m%d%H%M%S") + ".LOG"
-logging.basicConfig(format='%(levelname)s: %(message)s', filename=logFileName,level=logging.INFO)
+loglevel = logging.INFO
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
+handler = logging.FileHandler(logFileName)
+formatter = logging.Formatter("[%(asctime)s] '%(levelname)s': {%(message)s}")
+handler.setFormatter(formatter)
+log.addHandler(handler)
 
 msgSetup = ["","",""]
 
@@ -16,11 +23,11 @@ def errPrint():
 def arrayAddition(arg,i):
   global msgSetup
   if i == 1:
-    logging.info("Adding '" + arg + "' (recipient) to the list.")
+    log.info("Adding '" + str(arg) + "' (recipient) to the list.")
   elif i == 0:
-    logging.info("Adding '" + arg + "' (message) to the list.")
+    log.info("Adding '" + str(arg) + "' (message) to the list.")
   elif i == 2:
-    logging.info("Adding '" + arg + "' (title) to the list.")
+    log.info("Adding '" + str(arg) + "' (title) to the list.")
   msgSetup[i]=arg
   return
 
@@ -34,11 +41,11 @@ def sendingMail():
     # me == the sender's email address
     # you == the recipient's email address
     if msgSetup[2] == "":
-      logging.warning("No title included. Inserting text 'No Subject' instead.")
+      log.warning("No title included. Inserting text 'No Subject' instead.")
       msg['Subject'] = "No Subject"
     else:
       msg['Subject'] = msgSetup[2]
-    msg['From'] = "" #Put from email address 
+    msg['From'] = "" #Put from email address
     msg['To'] = msgSetup[1]
 
     # Send the message via our own SMTP server, but don't include the
@@ -48,33 +55,33 @@ def sendingMail():
     s.login(msg['From'], "") #Put application specific password
     s.sendmail(msg['From'], msg['To'], msg.as_string())
     s.quit()
-    logging.info("Email sent.")
+    log.info("Email sent.")
   except smtplib.SMTPRecipientsRefused, e:
-    logging.error(e)
+    log.error(e)
     sys.exit(1)
   except:
-    logging.error("Unexpected error")
-    print(sys.exc_info()[0])
+    log.error("Unexpected error")
+    log.error(sys.exc_info()[0])
     sys.exit(1)
   
 def main(argv):
   global msgSetup
-  logging.info("Starting to parse arguments")
+  log.info("Starting to parse arguments")
   try:
     opts, args = getopt.getopt(argv,"hr:m:t:", ["help", "recipient=", "msg=", "title="])
     if not opts:
       # Return proper usage of script if in error
-      logging.warning("No arguments provided. Printing help message and closing.")
+      log.warning("No arguments provided. Printing help message and closing.")
       errPrint()
   except getopt.GetoptError:
     # Return proper usage of script if in error
-    logging.warning("No arguments provided. Printing help message and closing.")
+    log.warning("No arguments provided. Printing help message and closing.")
     errPrint()
     sys.exit(2)
   for opt, arg in opts:
     if opt in ("-h", "--help"):
       # Return proper usage of script if in error
-      logging.info("Help message requested. Printing help message and closing.")
+      log.info("Help message requested. Printing help message and closing.")
       errPrint()
       sys.exit(2)
     elif opt in ("-r", "--recipient"):
@@ -84,7 +91,7 @@ def main(argv):
     elif opt in ("-t", "--title"):
       arrayAddition(arg,2)
 
-  logging.info("Attempting to send email.")
+  log.info("Attempting to send email.")
   sendingMail()
   
 if __name__ == '__main__':

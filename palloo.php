@@ -4,48 +4,113 @@ header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 
 define('COOKIE_FILE', 'cookie.txt');
-define('USERNAME', ''); //Insert Halloo Email address here
-define('PASSWORD', ''); //Insert Halloo password here
-define('PUSHOVER_API_TOKEN',''); //Insert Pushover API Token here
-define('PUSHBULLET_API_TOKEN',''); //Insert Pushbullet API Token here
 define('USER_AGENT', 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36');
+
+if(!file_exists(COOKIE_FILE)) {
+  $cookieFile = fopen(COOKIE_FILE, "w");
+  fclose($cookieFile);
+}
+
+$logHandler = '';
+$fLogPath = '';
 
 $RESPONSE_TITLE = 'Palloo';
 $RESPONSE_BODY = 'Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>';
 
-if ($_SERVER["REQUEST_METHOD"] == "GET") {
-  if (count($_GET) == 0) {
-    $RESPONSE_TITLE = "Palloo Help";
-  } else if(isset($_GET["help"])){
-    $RESPONSE_TITLE = "Palloo Help";
-  } else if (isset($_GET["process"])) {
-    $procVar = strtolower($_GET["process"]);
-    switch($procVar){
-      case "check":
-        $RESPONSE_TITLE = "Palloo Check";
-        break;
-      case "set";
-        $RESPONSE_TITLE = "Palloo Set";
-        break;
-      case "alert":
-        $RESPONSE_TITLE = "Palloo Alert";
-        break;
-      case "auto":
-        $RESPONSE_TITLE = "Palloo Auto-Rotate";
-        break;
-      case "numswap":
-        $RESPONSE_TITLE = "Palloo Swapping";
-        break;
-      case "avail":
-        $RESPONSE_TITLE = "Palloo Availability";
-        break;
-      default:
-        $RESPONSE_TITLE = "Palloo Help";
-        break;
+log_out("Pulling contents of extensions.json");
+$extensionsJson = json_decode(file_get_contents("extensions.json"), true);
+
+log_out("Defining Halloo settings");
+define('USERNAME', $extensionsJson["palloo"]["admin"]["email"]);
+define('PASSWORD', $extensionsJson["palloo"]["admin"]["pass"]);
+
+log_out("Defining push settings");
+foreach($extensionsJson["palloo"]["creds"] as $credentials) {
+  if( $credentials["service"] == "PUSHOVER" ) {
+    define('PUSHOVER_API_TOKEN', $credentials['token']);
+  } else if ( $credentials["service"] == "PUSHBULLET" ) {
+    define('PUSHBULLET_API_TOKEN', $credentials['token']);
+  }
+}
+if ( !defined('USERNAME') || !defined('PASSWORD') ) {
+  print "Unable to find username";
+  log_out("Unable to find username. Exiting...");
+  exit();
+} else if ( !defined("PUSHOVER_API_TOKEN") || !defined("PUSHBULLET_API_TOKEN") ) {
+  print "Unable to find pushing credentials";
+  log_out("Unable to find pushing credentials. Exiting...");
+  exit();
+}
+
+function make_log(){
+  global $logHandler;
+  global $fLogPath;
+  $logDir = "LOGS";
+  if(!is_dir($logDir)){
+    mkdir($logDir);
+  }
+
+  $logFileName = basename(__FILE__, '.php') . date("ymdHis") . ".LOG";
+
+  $fLogPath = $logDir . "\\" . $logFileName;
+  if (!file_exists($fLogPath)) {
+    touch($fLogPath);
+  }
+
+  $logHandler = fopen($fLogPath, 'w+');
+  fwrite($logHandler,date("[Y-m-d H:i:s] ") . "Log file created\r\n\r\n");
+}
+
+function log_out($msg, $deleteMe = false){
+  global $logHandler;
+
+  if ($deleteMe === false) {
+    if ($logHandler == '') {
+      make_log();
+    }
+
+    $msg = date("[Y-m-d H:i:s] ").$msg."\r\n\r\n";
+
+    try {
+      flock($logHandler, LOCK_EX);
+      fwrite($logHandler, $msg);
+      flock($logHandler, LOCK_UN);
+    } catch (Exception $e) {
+      echo "Error: " . $e->getMessage() . "</br>";
     }
   } else {
-    $RESPONSE_TITLE = "Palloo Help";
+    global $fLogPath;
+    fclose($logHandler);
+    unlink($fLogPath);
   }
+}
+
+function woops($curlHandler){
+  log_out("Cookie file was empty. Refilling cookie jar");
+
+  $GetHeaders = array("Host: my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
+  curl_reset($curlHandler);
+  $wooPostHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
+
+  $fields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In');
+  curl_setopt_array($curlHandler = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $wooPostHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+  
+  log_out("Logging into Halloo");
+  $result = curl_exec($curlHandler);
+
+  if (curl_getinfo($curlHandler)["http_code"] == 302 || curl_getinfo($curlHandler)["http_code"] == 500) {
+    log_out("Following redirect");
+    $redirectURL = curl_getinfo($curlHandler)["redirect_url"];
+    curl_reset($curlHandler);
+
+    curl_setopt_array($curlHandler, array(CURLOPT_URL => $redirectURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $GetHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+    $result = curl_exec($curlHandler);
+
+    curl_reset($curlHandler);
+  }
+  
+  log_out("Returning to caller");
+  return($curlHandler);
 }
 
 function stripper($data) {
@@ -60,6 +125,10 @@ function input_cleanse($data) {
 }
 
 function pushOver($user, $title, $msg) {
+  log_out("Sending pushover notification");
+  log_out("To: " . $user);
+  log_out("Title: " . $title);
+  log_out("Msg: " . $msg);
   curl_setopt_array($ch = curl_init(), array(
     CURLOPT_URL => "https://api.pushover.net/1/messages.json",
     CURLOPT_POSTFIELDS => array(
@@ -76,9 +145,14 @@ function pushOver($user, $title, $msg) {
   ));
   curl_exec($ch);
   curl_close($ch);
+  log_out("Push sent");
 }
 
 function pushBullet($email, $title, $msg) {
+  log_out("Sending pushbullet notification");
+  log_out("To: " . $email);
+  log_out("Title: " . $title);
+  log_out("Msg: " . $msg);
   curl_setopt_array($ch = curl_init(), array(
     CURLOPT_URL => 'https://api.pushbullet.com/v2/pushes',
     CURLOPT_HTTPHEADER  => array('Authorization: Bearer '. PUSHBULLET_API_TOKEN),
@@ -94,9 +168,23 @@ function pushBullet($email, $title, $msg) {
   ));
   curl_exec($ch);
   curl_close($ch);
+  log_out("Push sent");
 }
 
-function sendText($service, $number, $title, $msg) {
+function sendAnEmail($to, $title, $msg) {
+  log_out("Sending an email");
+  log_out("To: " . $to);
+  log_out("Title: " . $title);
+  log_out("Msg: " . $msg);
+  $execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
+  $execution = str_replace(array("'"), '"', $execution);
+  shell_exec($execution);
+  log_out("Email sent");
+  return;
+}
+
+function phoMail ($number, $service) {
+  log_out("Creating email from phone number");
   $service = stripper(str_replace(array("&","-"," "), '', $service));
   $number = stripper(str_replace(array("&","-"," ","(",")"), '', $number));
   if (strlen($number) == 11) {
@@ -105,76 +193,43 @@ function sendText($service, $number, $title, $msg) {
   switch(strtolower($service)){
     case "att":
       $to = $number . "@txt.att.net";
-      $execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
-      $execution = str_replace(array("'"), '"', $execution);
-      shell_exec($execution);
       break;
     case "verizon":
       $to = $number . "@vtext.com";
-      $execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
-      $execution = str_replace(array("'"), '"', $execution);
-      shell_exec($execution);
       break;
     case "tmobile":
       $to = $number . "@tmomail.net";
-      $execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
-      $execution = str_replace(array("'"), '"', $execution);
-      shell_exec($execution);
-      break;
-    case "sprint":
-      $to = $number . "@messaging.sprintpcs.com";
-      $execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
-      $execution = str_replace(array("'"), '"', $execution);
-      shell_exec($execution);
       break;
     case "googlefi":
       $to = $number . "@msg.fi.google.com";
-      $execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
-      $execution = str_replace(array("'"), '"', $execution);
-      shell_exec($execution);
+      break;
+    case "sprint":
+      $to = $number . "@messaging.sprintpcs.com";
+      break;
+    default:
+      $to = "Error: Not a supported service";
       break;
   }
-  return;
+  log_out("Phomail: " . $to);
+  return $to;   
 }
 
-function sendAnEmail($to, $title, $msg) {
-  $execution = "sendEmail.py -r " . $to . " -m '" . $msg . "' -t '" . $title . "'";
-  $execution = str_replace(array("'"), '"', $execution);
-  shell_exec($execution);
-  return;
-}
-
-function swappa($line) {
-  $headers = array("Host" => "my.halloo.com","Origin" => "https://my.halloo.com","User-Agent" => USER_AGENT,"Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language" => "en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection" => "keep-alive","Content-Type" => "application/x-www-form-urlencoded","Cache-Control" => "no-cache");
-
-  $fields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In');
-
-  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
-  $result = curl_exec($ch);
-  
-  curl_reset($ch);
-  $headers = array("Host" => "my.halloo.com","User-Agent" => USER_AGENT,"Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language" => "en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection" => "keep-alive","Cache-Control" => "no-cache");
-  $myFirstURL = 'http://my.halloo.com/console/miniproxy?method=setForward&forward=' . $line;
-  
-  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => $myFirstURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
-  
-  $result = curl_exec($ch);
-  
-  curl_close($ch);
-  $xml = simplexml_load_string($result);
-  return($xml->response[0]->agent[0]['forward']);
-}
-
-function randomKey($length) {
-    $pool = array_merge(range(0,9), range('a', 'z'),range('A', 'Z'));
-  $key = "";
-    for($i=0; $i < $length; $i++) {
-        $key .= $pool[mt_rand(0, count($pool) - 1)];
+function multipart_build_query($fields, $boundary){
+  log_out("Building multipart query");
+  $retVal = '';
+  foreach($fields as $key => $value){
+    if($key == "mugshot"){
+      $retVal = $retVal . "--" . $boundary . "\nContent-Disposition: form-data; name=" . $key . "; filename=\"\" \r\nContent-Type: application/octet-stream\r\n\r\n".$value."\r\n";
+    } else {
+      $retVal .= "--$boundary\nContent-Disposition: form-data; name=\"$key\"\r\n\r\n$value\r\n";
     }
-    return $key;
+  }
+  $retVal .= "--$boundary--";
+  return $retVal;
 }
 
 function resultsHandler($result,$phemail,$boundary) {
+  log_out("Parsing HTML results");
   $html = new DOMDocument();
   $internalErrors = libxml_use_internal_errors(true);
   $html->loadHtml($result);
@@ -255,89 +310,118 @@ function resultsHandler($result,$phemail,$boundary) {
   return $body;
 }
 
-function multipart_build_query($fields, $boundary){
-  $retVal = '';
-  foreach($fields as $key => $value){
-    if($key == "mugshot"){
-      $retVal = $retVal . "--" . $boundary . "\nContent-Disposition: form-data; name=" . $key . "; filename=\"\" \r\nContent-Type: application/octet-stream\r\n\r\n".$value."\r\n";
-    } else {
-      $retVal .= "--$boundary\nContent-Disposition: form-data; name=\"$key\"\r\n\r\n$value\r\n";
+function randomKey($length) {
+    log_out("Generating random key for boundary");
+    $pool = array_merge(range(0,9), range('a', 'z'),range('A', 'Z'));
+    $key = "";
+    for($i=0; $i < $length; $i++) {
+        $key .= $pool[mt_rand(0, count($pool) - 1)];
     }
-  }
-  $retVal .= "--$boundary--";
-  return $retVal;
+    return $key;
 }
 
-function phoMail ($number, $service) {
-  $service = stripper(str_replace(array("&","-"," "), '', $service));
-  $number = stripper(str_replace(array("&","-"," ","(",")"), '', $number));
-  if (strlen($number) == 11) {
-    $number = substr($number,1);
+function checkUser($rtype) {
+  $extJson = json_decode(file_get_contents("extensions.json"), true);
+  $getHeaders = array("Host: my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
+  
+  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => 'http://my.halloo.com/ext/?view=User%20Settings&extn=oncall&tab=Forwarding',CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+  
+  log_out("Getting OnCall Forwarding tab");
+  $result = curl_exec($ch);
+
+  if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
+    $ch = woops($ch);
+    curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => 'http://my.halloo.com/ext/?view=User%20Settings&extn=oncall&tab=Forwarding',CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+    $result = curl_exec($ch);
+
+    if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
+      log_out("Returning: Error: Cannot log into Halloo");
+      return "Error: Cannot log into Halloo.";
+    }
   }
-  switch(strtolower($service)){
-    case "att":
-      $to = $number . "@txt.att.net";
-      break;
-    case "verizon":
-      $to = $number . "@vtext.com";
-      break;
-    case "tmobile":
-      $to = $number . "@tmomail.net";
-      break;
-    case "googlefi":
-      $to = $number . "@msg.fi.google.com";
-      break;
-    case "sprint":
-      $to = $number . "@messaging.sprintpcs.com";
-      break;
+
+  log_out("Parsing Oncall forwarding");
+
+  $html = new DOMDocument();
+  $internalErrors = libxml_use_internal_errors(true);
+  $html->loadHtml($result);
+  
+  $xpath = new DOMXpath($html);
+  $fwd = $xpath->query("//*[contains(@name, 'fwd_')]");
+  $hallooResponse = $fwd->item(2)->getAttribute('value');
+  curl_close($ch);
+
+  #If phone number matches that of the oncall user
+  #Else, search for that matching number
+  if (stripper($hallooResponse) == stripper($extJson["palloo"]["oncall"]["phone"])) {
+    if ($rtype == 1) {
+      log_out("Returning: On Call user is " . ucfirst($extJson["palloo"]["oncall"]["name"]) . ".");
+      return "On Call user is " . ucfirst($extJson["palloo"]["oncall"]["name"]) . ".";
+    } else {
+      log_out("Returning: " . $extJson["palloo"]["oncall"]["name"]);
+      return $extJson["palloo"]["oncall"]["name"];
+    }
+  } else {
+    foreach($extJson["palloo"]["extensions"] as $user) {
+      if(stripper($hallooResponse) == stripper($user["phone"])) {
+        if ($rtype == 1) {
+          #Update on call user in json file
+          foreach($user as $key => $value) {
+            $extJson["palloo"]["oncall"][$key] = $value;
+          }
+          log_out("Returning: On Call file updated. User: " . ucfirst($extJson["palloo"]["oncall"]["name"]));
+          file_put_contents('extensions.json', json_encode($extJson,TRUE));
+          return("On Call file updated. User: " . ucfirst($extJson["palloo"]["oncall"]["name"]));
+        } else {
+          #Find name of user on call in Halloo, return that
+          foreach($extJson["palloo"]["extensions"] as $user) {
+            if(stripper($hallooResponse) == stripper($user["phone"])) {
+              log_out("Returning: " . $extJson["palloo"]["oncall"]["name"]);
+              return($extJson["palloo"]["oncall"]["name"]);
+            }
+          }
+        }
+      }
+    }
+    log_out("Returning: There was an error gathering On Call information. On Call information online does not match any users phone number on file.");
+    return "There was an error gathering On Call information. On Call information online does not match any users phone number on file.";
   }
-  return $to;   
 }
 
 function setUser($userToSet, $rType) {
-  $dir = 'Ext';
-  $files = array_diff(scandir($dir), array('..', '.','oncall','rotation','phptransfer'));
-  $line = [];
-  $loo = false;
-  while (list($key,$val) = each($files)){
-    if($val == $userToSet) {
-      $line[] = $val;
-      $filePath = $dir . "/" . $val;
-      $handle = fopen($filePath, "r");
-      while(!feof($handle)){
-        $line[] = fgets($handle);
+  $extJson = json_decode(file_get_contents("extensions.json"), true);
+  $userBeingSet = [];
+  foreach($extJson["palloo"]["extensions"] as $user) {
+    if(strtolower(stripper($userToSet)) == strtolower(stripper($user["name"]))) {
+      foreach($user as $key => $value) {
+        $userBeingSet[$key] = $value;
       }
-      $loo = true;
-    }
-    if($loo) {
       break;
-    } else {
-      unset($line);
     }
   }
   
-  if(!isset($line)) {
+  if(empty($userBeingSet)) {
+    log_out("No valid user found");
     return "Error: Please provide a valid name to set.";
   } else {
-    $OCForwardingURL = "http://my.halloo.com/ext/?view=User%20Settings&extn=oncall&tab=Forwarding";
-    $OCGeneralURL = "http://my.halloo.com/ext/?view=User%20Settings&extn=oncall&tab=General";
+    log_out("User grabbed from json");
+    $OCURL = "http://my.halloo.com/ext/?view=User%20Settings&extn=oncall&tab=";
+    $TSURL = "http://my.halloo.com/ext/?view=User%20Settings&extn=TSEmergency&tab=";
     
-    $TSForwardingURL = "http://my.halloo.com/ext/?view=User%20Settings&extn=TSEmergency&tab=Forwarding";
-    $TSGeneralURL = "http://my.halloo.com/ext/?view=User%20Settings&extn=TSEmergency&tab=General";
+    $getHeaders = array("Host: my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
     
-    $signinHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
-    $getterHeaders = array("Host: my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
-    $loginFields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In');
-    
-    //Sign-In Post set up and requested
-    curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$loginFields["ucomp"].'&upass='.$loginFields["upass"].'&submit='.$loginFields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $signinHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+    curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => $OCURL . "Forwarding",CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
     $result = curl_exec($ch);
-    
-    curl_reset($ch);
-    
-    //On-Call Forwarding page set up and requested
-    curl_setopt_array($ch, array(CURLOPT_URL => $OCForwardingURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
-    $result = curl_exec($ch);
+
+    if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
+      $ch = woops($ch);
+      curl_setopt_array($ch, array(CURLOPT_URL => $OCURL . "Forwarding",CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      $result = curl_exec($ch);
+
+      if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
+        return "Error: Cannot log into Halloo.";
+      }
+    }
     
     $html = new DOMDocument();
     $internalErrors = libxml_use_internal_errors(true);
@@ -345,86 +429,67 @@ function setUser($userToSet, $rType) {
     
     $xpath = new DOMXpath($html);
     $fwd = $xpath->query("//*[contains(@name, 'fwd_')]");
-    $pyOutput = $fwd->item(2)->getAttribute('value');
     
-    $onCallHomeField = $fwd->item(0)->getAttribute('name');
-    $onCallOfficeField = $fwd->item(1)->getAttribute('name');
-    $onCallMobileField = $fwd->item(2)->getAttribute('name');
+    $hallooResponse = $fwd->item(2)->getAttribute('value');
     
-    if ($pyOutput == stripper($line[1])) {
-      //Open On Call file and get all information
-      $ocfilename = "Ext/oncall";
-      //$ocFileInfo[] = substr($ocfilename,4);
-      $ochandle = fopen($ocfilename, "r");
-      
-      while(!feof($ochandle)){
-        $ocFileInfo[] = fgets($ochandle);
-      }
-      fclose($ochandle);
-      
-      //Strip line breaks and weird stuff from phone number
-      $ocFileInfo[0] = stripper($ocFileInfo[0]);
-      
-      if ($ocFileInfo[0] == stripper($line[1])) {
-        if($rType == 1){
-          curl_close($ch);
-          return "User is already On Call.";
+    $OCHome = $fwd->item(0)->getAttribute('name');
+    $OCOffice = $fwd->item(1)->getAttribute('name');
+    $OCMobile = $fwd->item(2)->getAttribute('name');
+
+    log_out("Phone numbers and field names gathered from Halloo");
+    
+    if (stripper($hallooResponse) == stripper($userBeingSet["phone"])) {
+      if (strtolower(stripper($userBeingSet["name"])) == stripper(strtolower($extJson["palloo"]["oncall"]["name"]))) {
+        if($rType == 1) {
+          log_out("User is already set OnCall");
+          return("User is already OnCall.");
         } else {
-          curl_close($ch);
-          return $line[0];
-        }
-      } else {
-        //This should set the onCall User here
-        $ochandle = fopen($ocfilename, "w");
-        
-        for($i=1;$i < count($line);$i++){
-          fwrite($ochandle, $line[$i]);
-        }
-        fclose($ochandle);
-        if($rType == 1){
-          curl_close($ch);
-          return "On Call file updated. User: " . ucfirst($line[0]);
-        } else {
-          curl_close($ch);
-          return $line[0];
+          log_out("User is already set OnCall: " . $extJson["palloo"]["oncall"]["name"]);
+          return($extJson["palloo"]["oncall"]["name"]);
         }
       }
     } else {
-      $onCallBoundary = "---------------------------" . randomKey(16);
-      $tsEmerBoundary = "---------------------------" . randomKey(16);
-      $postonCallForHeaders = array("Host: my.halloo.com","Origin: $OCForwardingURL","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Referer: $OCForwardingURL","Cache-Control: no-cache");
-      $postonCallGenHeaders = array("Host: my.halloo.com","Origin: $OCGeneralURL","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=$onCallBoundary","Referer: $OCGeneralURL","Cache-Control: no-cache");
+      $OCBoundary = "---------------------------" . randomKey(16);
+      $TSBoundary = "---------------------------" . randomKey(16);
+      log_out("Boundaries created");
       
-      $posttsEmerForHeaders = array("Host: my.halloo.com","Origin: $TSForwardingURL","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Referer: $TSForwardingURL","Cache-Control: no-cache");
-      $posttsEmerGenHeaders = array("Host: my.halloo.com","Origin: $TSGeneralURL","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=$tsEmerBoundary","Referer: $TSGeneralURL","Cache-Control: no-cache");
+      $pOCForHead = array("Host: my.halloo.com","Origin: " . $OCURL . "Forwarding","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Referer: " . $OCURL . "Forwarding","Cache-Control: no-cache");
+      $pOCGenHead = array("Host: my.halloo.com","Origin: " . $OCURL . "General","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=" . $OCBoundary,"Referer: " . $OCURL . "General","Cache-Control: no-cache");
       
-      $onCallStrings = $onCallHomeField.'='.stripper($line[1]).'&'.$onCallOfficeField.'='.stripper($line[1]).'&'.$onCallMobileField.'='.stripper($line[1]).'&Submit=Save+Changes';
-      $phoMail = phoMail($line[1],$line[3]);
+      $pTSForHead = array("Host: my.halloo.com","Origin: " . $TSURL . "Forwarding","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Referer: " . $TSURL . "Forwarding","Cache-Control: no-cache");
+      $pTSGenHead = array("Host: my.halloo.com","Origin: " . $TSURL . "General","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: multipart/form-data; boundary=" . $TSBoundary,"Referer: " . $TSURL . "General","Cache-Control: no-cache");
+      
+      $OCString = $OCHome.'='.stripper($userBeingSet["phone"]).'&'.$OCOffice.'='.stripper($userBeingSet["phone"]).'&'.$OCMobile.'='.stripper($userBeingSet["phone"]).'&Submit=Save+Changes';
+      $phoMail = phoMail($userBeingSet["phone"],$userBeingSet["service"]);
+      log_out("OnCall string query generated and phone/email created");
       
       curl_reset($ch);
       
       //On-Call Forwarding page Post set up and executed
-      curl_setopt_array($ch, array(CURLOPT_URL => $OCForwardingURL,CURLOPT_POSTFIELDS => $onCallStrings,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $postonCallForHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $OCURL . "Forwarding",CURLOPT_POSTFIELDS => $OCString,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $pOCForHead,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      log_out("Setting information on OC Forwarding page");
       $result = curl_exec($ch);
       
       curl_reset($ch);
       
       //On-Call General page Get set up and executed
-      curl_setopt_array($ch, array(CURLOPT_URL => $OCGeneralURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $OCURL . "General",CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       
       $result = curl_exec($ch);
-      $genPostFields = resultsHandler($result,$phoMail,$onCallBoundary);
+      $OCPost = resultsHandler($result,$phoMail,$OCBoundary);
       curl_reset($ch);
       
       //On-Call General page POST set up and executed
-      curl_setopt_array($ch, array(CURLOPT_URL => $OCGeneralURL,CURLOPT_POST => 1,CURLOPT_POSTFIELDS => $genPostFields,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $postonCallGenHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $OCURL . "General",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => $OCPost,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $pOCGenHead,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       
+      log_out("Setting information on OC General page");
       $result = curl_exec($ch);
       
       curl_reset($ch);
       
       //tsEmer Forwarding page GET set up and requested
-      curl_setopt_array($ch, array(CURLOPT_URL => $TSForwardingURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $TSURL . "Forwarding",CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      log_out("Gathering fields and phone numbers from TS Forwarding page");
       $result = curl_exec($ch);
       
       $html = new DOMDocument();
@@ -434,228 +499,189 @@ function setUser($userToSet, $rType) {
       $xpath = new DOMXpath($html);
       $fwd = $xpath->query("//*[contains(@name, 'fwd_')]");
       
-      $tsEmerHomeField = $fwd->item(0)->getAttribute('name');
-      $tsEmerOfficeField = $fwd->item(1)->getAttribute('name');
-      $tsEmerMobileField = $fwd->item(2)->getAttribute('name');
-      $tsEmerStrings = $tsEmerHomeField.'='.stripper($line[1]).'&'.$tsEmerOfficeField.'='.stripper($line[1]).'&'.$tsEmerMobileField.'='.stripper($line[1]).'&Submit=Save+Changes';
-      
+      $TSHome = $fwd->item(0)->getAttribute('name');
+      $TSOffice = $fwd->item(1)->getAttribute('name');
+      $TSMobile = $fwd->item(2)->getAttribute('name');
+      $TSString = $TSHome.'='.stripper($userBeingSet["phone"]).'&'.$TSOffice.'='.stripper($userBeingSet["phone"]).'&'.$TSMobile.'='.stripper($userBeingSet["phone"]).'&Submit=Save+Changes';
+
+      log_out("TSEmergency string query generated (previous phone/email being used)");
+
       curl_reset($ch);
       
       //tsEmer Forwarding page Post set up and executed
-      curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => $TSForwardingURL,CURLOPT_POSTFIELDS => $tsEmerStrings,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $posttsEmerForHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => $TSURL . "Forwarding",CURLOPT_POSTFIELDS => $TSString,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $pTSForHead,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      log_out("Setting information on TS Forwarding page");
       $result = curl_exec($ch);
       
       curl_reset($ch);
       
       //tsEmer General page Get set up and executed
-      curl_setopt_array($ch, array(CURLOPT_URL => $TSGeneralURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getterHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $TSURL . "General",CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       
       $result = curl_exec($ch);
-      $tsEmerPostFields = resultsHandler($result,$phoMail,$tsEmerBoundary);
+      $TSPost = resultsHandler($result,$phoMail,$TSBoundary);
       curl_reset($ch);
       
       //tsEmer General page POST set up and executed
-      curl_setopt_array($ch, array(CURLOPT_URL => $TSGeneralURL,CURLOPT_POST => 1,CURLOPT_POSTFIELDS => $tsEmerPostFields,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $posttsEmerGenHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+      curl_setopt_array($ch, array(CURLOPT_URL => $TSURL . "General",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => $TSPost,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $pTSGenHead,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
       
+      log_out("Setting information on TS General page");
       $result = curl_exec($ch);
       
       curl_close($ch);
-      
-      //Open On Call file and get all information
-      $ocfilename = "Ext/oncall";
-      //$ocFileInfo[] = substr($ocfilename,4);
-      $ochandle = fopen($ocfilename, "r");
-      
-      while(!feof($ochandle)){
-        $ocFileInfo[] = fgets($ochandle);
+
+      foreach($userBeingSet as $key => $value) {
+        $extJson["palloo"]["oncall"][$key] = $value;
       }
-      fclose($ochandle);
+      log_out("Updating extenstions file");
+      file_put_contents('extensions.json', json_encode($extJson,TRUE));
       
-      //Strip line breaks and weird stuff from phone number
-      $ocFileInfo[0] = stripper($ocFileInfo[0]);
-      
-      if ($ocFileInfo[0] == $line[1]) {
-        if($rType == 1){
-          return "User's extension is now set on Halloo and On Call file is up to date. User: " . ucfirst($line[0]);
-        } else {
-          return $line[0];
-        }
+      if($rType == 1){
+        log_out("Returning: User's extension is now set on Halloo and On Call file is up to date. User: " . $extJson["palloo"]["oncall"]["name"]);
+        return "User's extension is now set on Halloo and On Call file is up to date. User: " . $extJson["palloo"]["oncall"]["name"];
       } else {
-        //This should set the onCall User here
-        $ochandle = fopen($ocfilename, "w");
-        
-        for($i=1;$i < count($line);$i++){
-          fwrite($ochandle, $line[$i]);
-        }
-        fclose($ochandle);
-        if($rType == 1){
-          return "User's extension is now set on Halloo and On Call file updated. User: " . ucfirst($line[0]);
-        } else {
-          return $line[0];
-        }
+        log_out("Returning: " . $extJson["palloo"]["oncall"]["name"]);
+        return $extJson["palloo"]["oncall"]["name"];
       }
     }
   }
 }
 
-function checkUser($rType){
-  $postHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
-  $getHeaders = array("Host: my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
-    
-  $fields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In');
+function setAvailability($togVal="true") {
   
-  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $postHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
-  $result = curl_exec($ch);
-  
-  curl_reset($ch);
-  
-  curl_setopt_array($ch, array(CURLOPT_URL => 'http://my.halloo.com/ext/?view=User%20Settings&extn=oncall&tab=Forwarding',CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
-  
-  $result = curl_exec($ch);
-  $html = new DOMDocument();
-  $internalErrors = libxml_use_internal_errors(true);
-  $html->loadHtml($result);
-  
-  $xpath = new DOMXpath($html);
-  $fwd = $xpath->query("//*[contains(@name, 'fwd_')]");
-  $pyOutput = $fwd->item(2)->getAttribute('value');
-  curl_close($ch);
-  
-  //Open On Call file and get all information
-  $ocfilename = "Ext/oncall";
-  //$ocFileInfo[] = substr($ocfilename,4);
-  $ochandle = fopen($ocfilename, "r");
-  
-  while(!feof($ochandle)){
-    $ocFileInfo[] = fgets($ochandle);
-  }
-  fclose($ochandle);
-  
-  //Strip line breaks and weird stuff from phone number
-  $ocFileInfo[0] = stripper($ocFileInfo[0]);
-  
-  //If numbers match, send information to screen "On Call user is this:"
-  //Else, Set information in On Call file and update screen to inform update
-  if ($pyOutput == $ocFileInfo[0]) {  
-    //Sets directory of extensions
-    $dir = 'Ext';
-    //Creates array with file names, excluding On Call and extraneous information
-    $dirFiles = array_diff(scandir($dir), array('..', '.','oncall','rotation','phptransfer'));
-    $line = [];
-    //Loops through key/val array of files to determine which user has the phone number that matches the On Call number
-    while (list($key,$val) = each($dirFiles)){
-      $line[] = $val;
-      $filePath = $dir . "/" . $val;
-      $handle = fopen($filePath, "r");
-      while(!feof($handle)){
-        $line[] = fgets($handle);
-      }
-      if($ocFileInfo[0] == stripper($line[1])) {
-        break;
-      }
-      unset($line);
-    }
-    if(!isset($line)) {
-      return "There was an error gathering On Call information. On Call information online does not match any users phone number on file locally.";
-    } else {
-      if($rType == 1){
-        return "On Call user is: " . ucfirst($line[0]);
-      } else {
-        return $line[0];
-      }
-    }
+  if($togVal == "true" || $togVal == strtolower("on") || $togVal == strtolower("avail")) {
+    $togVal = "AVAIL";
+  } else if ($togVal == "false" || $togVal == strtolower("off") || $togVal == strtolower("unavail")) {
+    $togVal = "UNAVAIL";
   } else {
-    //Sets directory of extensions
-    $dir = 'Ext';
-    //Creates array with file names, excluding On Call and extraneous information
-    $dirFiles = array_diff(scandir($dir), array('..', '.','oncall'));
-    $line = [];
-    //Loops through key/val array of files to determine which user has the phone number that matches the On Call number
-    while (list($key,$val) = each($dirFiles)){
-      $line[] = $val;
-      $filePath = $dir . "/" . $val;
-      $handle = fopen($filePath, "r");
-      while(!feof($handle)){
-        $line[] = fgets($handle);
-      }
-      if($pyOutput == stripper($line[1])) {
-        break;
-      }
-      unset($line);
-    }
-    if(empty($line)) {
-      return "There was an error gathering On Call information. On Call information online does not match any users phone number on file locally.";
-    } else {
-      //This should set the On Call User here
-      $ochandle = fopen($ocfilename, "w");
-      
-      for($i=1;$i < count($line);$i++){
-        fwrite($ochandle, $line[$i]);
-      }
-      fclose($ochandle);
-      if($rType == 1){
-        return "On Call file updated. User: " . ucfirst($line[0]);
-      } else {
-        return $line[0];
-      }
+    log_out("Invalid option: " . $togVal);
+    return("Invalid option: " . $togVal);
+  }
+
+  log_out("Updating Halloo availability to: " . $togVal);
+
+  $data = "_METHOD=PUT&qstatus=".$togVal;
+  $availHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
+    
+  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => 'http://my.halloo.com/console/Extensions/steven',CURLOPT_POST => 1, CURLOPT_POSTFIELDS => $data,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $availHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+  $result = curl_exec($ch);
+  $responseCode = curl_getinfo($ch);
+
+
+  if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
+    $ch = woops($ch);
+  
+    curl_setopt_array($ch, array(CURLOPT_URL => 'http://my.halloo.com/console/Extensions/steven',CURLOPT_POST => 1, CURLOPT_POSTFIELDS => $data,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $availHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+    $result = curl_exec($ch);
+    $responseCode = curl_getinfo($ch);
+
+    if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
+      header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+      exit();
     }
   }
+  curl_close($ch);
+
+  if ($responseCode["http_code"] == 200) {
+    log_out("Availability updated to " . $togVal);
+    return("Availability updated to " . $togVal);
+  } else {
+    log_out("Error updating Halloo availability.");
+    return("Error updating Halloo availability.");
+  }
+}
+
+function swapNumbers($line) {
+  log_out("Swapping numbers to: " . $line);
+  $headers = array("Host" => "my.halloo.com","User-Agent" => USER_AGENT,"Accept" => "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language" => "en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection" => "keep-alive","Cache-Control" => "no-cache");
+  $myFirstURL = 'http://my.halloo.com/console/miniproxy?method=setForward&forward=' . $line;
+  
+  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => $myFirstURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+  
+  $result = curl_exec($ch);
+
+  if(curl_getinfo($ch)["http_code"] == 302 || curl_getinfo($ch)["http_code"] == 500 || curl_getinfo($ch)["redirect_url"] == "http://my.halloo.com/") {
+    $ch = woops($ch);
+    
+    curl_setopt_array($ch, array(CURLOPT_URL => $myFirstURL,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
+    
+    $result = curl_exec($ch);
+  }
+
+  curl_close($ch);
+  $xml = simplexml_load_string($result);
+  log_out("Line swapped to: " . $xml->response[0]->agent[0]['forward']);
+  return($xml->response[0]->agent[0]['forward']);
 }
 
 function alertOutput($file,$comVars) {
-  switch(strtolower(stripper($file[4]))){
+  #Check if field response is blank
+  switch(strtolower(stripper($file["method"]))){
     case "pushover":
-      pushOver(stripper($file[5]), $comVars[0], $comVars[1]);
+      pushOver(stripper($file["token"]), $comVars[0], $comVars[1]);
       break;
     case "sms":
-      if(stripper($file[3]) != 'GoogleFi' && stripper($file[3]) != 'AT&T' && stripper($file[3]) != 'Sprint' && stripper($file[3]) != 'T-Mobile' && stripper($file[3]) != 'Verizon') {
-        sendAnEmail(stripper($file[2]), $comVars[0], $comVars[1]);
+      $smsMail = phoMail(stripper($file["phone"]),$file["service"]);
+      
+      if(strpos(strtolower($smsMail), 'error') !== False) {
+        sendAnEmail(stripper($file["email"]), $comVars[0], $comVars[1]);
       } else {
-        sendText($file[3], stripper($file[1]), $comVars[0], $comVars[1]);
+        sendAnEmail($smsMail, $comVars[0], $comVars[1]);
       }
       break;
     case "pushbullet":
-      if (isset($file[5])) {
-        pushBullet($file[5], $comVars[0], $comVars[1]);
+      if ($file["token"] != "") {
+        pushBullet($file["token"], $comVars[0], $comVars[1]);
       } else {
-        pushBullet($file[2], $comVars[0], $comVars[1]);
+        pushBullet($file["token"], $comVars[0], $comVars[1]);
       }
       break;
     case "email":
-      if (isset($file[5])) {
-        sendAnEmail(stripper($file[5]), $comVars[0], $comVars[1]);
+      if ($file["token"] != "") {
+        sendAnEmail(stripper($file["token"]), $comVars[0], $comVars[1]);
       } else {
-        sendAnEmail(stripper($file[2]), $comVars[0], $comVars[1]);
+        sendAnEmail(stripper($file["email"]), $comVars[0], $comVars[1]);
       }
       break;
   }
 }
 
-function getAlertVars($from,$to = "oncall",$storage = array()) {
-  //$file[0] == filename
-  //$file[1] == phone number
-  //$file[2] == email address
-  //$file[3] == cell service
-  //$file[4] == method
-  //$file[5] == extra information
-  //If method is sms - 3 is carrier
-  //If method is pushover - 5 is device ID
-  //If method is email - 5 would not be needed (unless personal email)
-  //If method is pushbullet - 5 would be personal user email address (if blank, use work email)
+function sendAlert($from,$to = "oncall",$storage = array()) {
+  $extJson = json_decode(file_get_contents("extensions.json"), true);
   
-  if($from == 1){
-    if($storage["alertType"] == 2) {
-      $comVars[0] = "Monitor is UP: " . urldecode($storage["monitorFriendlyName"]);
-      $upDown = "UP";
-    } else if ($storage["alertType"] == 1) {
+  if ($to == "oncall") {
+    if ($extJson["palloo"]["oncall"]["alert"] == false) {
+      log_out("Alert sending to this user is unavailable at this time.");
+      return "Alert sending to this user is unavailable at this time.";
+    }
+  } else if ($to == "admin") {
+    log_out("Message to admin, ignore protocols.");
+  } else {
+    foreach($extJson["palloo"]["extensions"] as $user) {
+      if(input_cleanse(strtolower($to)) == input_cleanse(strtolower($user["name"]))) {
+        if ($user["alert"] == false) {
+          log_out("Alert sending to this user is unavailable at this time.");
+          return "Alert sending to this user is unavailable at this time.";
+        }
+        break;
+      }
+    }
+  }
+
+  if($from == 1) {
+    if($storage["alertType"] == 1) {
       $comVars[0] = "Monitor is DOWN: " . urldecode($storage["monitorFriendlyName"]);
       $upDown = "DOWN";
-    } else {
-      $comVars[0] = "Monitor is in a superposition of both UP and DOWN: " . urldecode($storage["monitorFriendlyName"]);
-      $upDown = "in a superposition of both UP and DOWN";
+    } else if ($storage["alertType"] == 2) {
+      $comVars[0] = "Monitor is UP: " . urldecode($storage["monitorFriendlyName"]);
+      $upDown = "UP";
     }
     
-    $comVars[1] = urldecode("The monitor `" . $storage["monitorFriendlyName"] . "` (" . $storage["monitorURL"] . ") is currently " . $upDown . " (" . $storage["alertDetails"] . ").");
+    $comVars[1] = urldecode("The monitor `" . $storage["monitorFriendlyName"] . "` (" . $storage["monitorURL"] . ") is currently " . $upDown . ".");
+    
+    if (isset($storage["alertDetails"])) {
+      $comVars[1] = $comVars[1] . " (" . $storage["alertDetails"] . ")."; 
+    }
     
     if (isset($storage["name"])) {
       $comVars[2] = input_cleanse($storage["name"]);
@@ -678,246 +704,235 @@ function getAlertVars($from,$to = "oncall",$storage = array()) {
         }
       }
     }
+  }
     
-    for ($x = 0; $x < 3; $x++) {
-      if(!isset($comVars[$x])) {
-        if ($x == 0) {
-          $comVars[0] = "Title was not set";
-        } else if ($x == 1) {
-          $comVars[1] = "Message was not set";
-        } else if ($x == 2) {
-          $comVars[2] = $to;
-        }
+  for ($x = 0; $x < 3; $x++) {
+    if(!isset($comVars[$x])) {
+      if ($x == 0) {
+        $comVars[0] = "Title was not set";
+      } else if ($x == 1) {
+        $comVars[1] = "Message was not set";
+      } else if ($x == 2) {
+        $comVars[2] = $to;
       }
     }
   }
-  
-  if(strtolower(stripper($comVars[2])) == "oncall") {
-    $line[] = "oncall";
-    $filepath = 'Ext/oncall';
-    $handle = fopen($filepath,"r");
-    while(!feof($handle)){
-      $line[] = fgets($handle);
-    }
+
+  if (strtolower(stripper($to)) == "oncall" || strtolower(stripper($to)) == "admin") {
+    alertOutput($extJson["palloo"][$to],$comVars);
+    return $comVars;
   } else {
-    //Sets directory of extensions
-    $dir = 'Ext';
-    
-    //Creates array with file names, excluding On Call and extraneous information
-    $dirFiles = array_diff(scandir($dir), array('..', '.','oncall','rotation','phptransfer'));
-    $line = [];
-    //Loops through key/val array of files to determine which user has the phone number that matches the On Call number
-    while (list($key,$val) = each($dirFiles)){
-      $line[] = $val;
-      $filePath = $dir . "/" . $val;
-      $handle = fopen($filePath, "r");
-      while(!feof($handle)){
-        $line[] = fgets($handle);
+    foreach($extJson["palloo"]["extensions"] as $user) {
+      if (input_cleanse(strtolower($user["name"])) == input_cleanse(strtolower($storage["name"]))) {
+        alertOutput($user,$comVars);
+        break 1;
       }
-      if(stripper($comVars[2]) == stripper($line[0])) {
-        break;
-      }
-      unset($line);
     }
-  }
-  
-  if(!isset($line)) {
-    //Send information to Steven
-    //Grabs all information from Steven's file.
-    $stevenfilename = $dir . "/steven";
-    $stevenFileInfo[] = "Steven";
-    $stevenhandle = fopen($stevenfilename, "r");
-    while(!feof($stevenhandle)){
-      $stevenFileInfo[] = fgets($stevenhandle);
-    }
-    fclose($stevenhandle);
-    alertOutput($stevenFileInfo,$comVars);
-  } else {
-    alertOutput($line,$comVars);
-  }
-  return $comVars;
-}
-
-function availabilityToggling($togVal=true) {
-  $headers = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
-  $fields = array("ucomp" => USERNAME,"upass" => PASSWORD,"submit" => 'Sign-In'); 
-
-  curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => "https://my.halloo.com/sign-in/",CURLOPT_POST => 1,CURLOPT_POSTFIELDS => 'ucomp='.$fields["ucomp"].'&upass='.$fields["upass"].'&submit='.$fields["submit"],CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => COOKIE_FILE,CURLOPT_COOKIEJAR => COOKIE_FILE,CURLOPT_HTTPHEADER => $headers,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
-  $result = curl_exec($ch);
-  
-  if($togVal === true || $togVal == "on") {
-    $togVal = "AVAIL";
-  } else {
-    $togVal = "UNAVAIL";
-  }
-  curl_reset($ch);
-  $data = "_METHOD=PUT&qstatus=".$togVal;
-  $availHeaders = array("Host: my.halloo.com","Origin: https://my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding: gzip, deflate","Connection: keep-alive","Content-Type: application/x-www-form-urlencoded","Cache-Control: no-cache");
-    
-  curl_setopt_array($ch, array(CURLOPT_URL => 'http://my.halloo.com/console/Extensions/steven',CURLOPT_POST => 1, CURLOPT_POSTFIELDS => $data,CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $availHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
-  $result = curl_exec($ch);
-  $responseCode = curl_getinfo($ch);
-  curl_close($ch);
-
-  if ($responseCode["http_code"] == 200) {
-    return("Availability updated to " . $togVal);
-  } else {
-    return("Error updating Halloo availability.");
+    return $comVars;
   }
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
-  if (count($_GET) == 0) {
-    $RESPONSE_BODY = "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>";
-  } else if(isset($_GET["help"])){
-    $RESPONSE_BODY = "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>";
-  } else if (isset($_GET["process"])) {
+  if (isset($_GET["process"])) {
     $procVar = input_cleanse(strtolower($_GET["process"]));
     switch($procVar){
-      case "check":
-        $OCUser = checkUser(1);
-        
-        if (is_String($OCUser)) {
-          if (strpos($OCUser,'Error') !== False || strpos($OCUser,'error') !== False) {
-            $RESPONSE_BODY = "There was an error while checking the onCall user. Please contact the administrator.";
-            $alertVars = getAlertVars(0,"steven",array("title" => "Error while checking the OnCall user","msg" => "There was an error while checking the onCall user."));
+      case "auto":
+        log_out("Process: Auto");
+        $RESPONSE_TITLE = "Palloo Auto-Rotate";
+        if ($extensionsJson["palloo"]["checks"]["auto"] == true) {
+          shell_exec("cal.py");
+
+          $HOCUser = checkUser(0);
+
+          if(strpos(strtolower($HOCUser), 'error') !== False) {
+            $RESPONSE_BODY = "There was an error while checking the onCall user. Administrator has been contacted.";
+            sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
+            break;
+          } else if (stripper($extensionsJson["palloo"]["oncall"]["name"]) == stripper($HOCUser)) {
+            $RESPONSE_BODY = "The currently scheduled on-call user (" . ucfirst($HOCUser) .") is already set.";
+            sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
+            break;
+          }
+
+          $nameToSet = input_cleanse(strtolower($HOCUser));
+          $setRes = setUser($nameToSet,0);
+
+          $HOCUser = checkUser(0);
+
+          if(strpos(strtolower($HOCUser), 'error') !== False) {
+            $RESPONSE_BODY = "There was an error while checking the onCall user. Administrator has been contacted.";
+            sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
+            break;
+          } else if ($setRes != $HOCUser) {
+            $RESPONSE_BODY = "There was an error and something didn't update. Please try again.";
+            sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => "There was an error and something didn't update. Please try again."));
+            break;
           } else {
-            $RESPONSE_BODY = $OCUser;
+            //Check if oncall should be receiving alert
+            sendAlert(0,"oncall",array("title" => "You are now on call","msg" => "You have been automatically set to on call based on a schedule. Good luck!"));
+            $RESPONSE_BODY = "The currently scheduled on-call user (" . ucfirst($HOCUser) .") has been set.";
+            if(strtolower($HOCUser) != 'steven') {
+              sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
+            }
+            break;
           }
         } else {
-          $RESPONSE_BODY = "Unknown return type.";
+          log_out("Auto process is disabled");
+          $RESPONSE_BODY = "Auto is unavailable at this time.";
+        }
+        break;
+      case "check":
+        log_out("Process: Check");
+        $RESPONSE_TITLE = "Palloo Check";
+        $checkRes = checkUser(1);
+        if (strpos(strtolower($checkRes), 'error') !== False) {
+          $RESPONSE_BODY = "There was an error while checking the onCall user. Administrator has been contacted.";
+          log_out("General error when checking onCall user");
+          sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => "There was an error checking the OnCall user. Please try again."));
+        } else {
+          $RESPONSE_BODY = $checkRes;
         }
         break;
       case "set":
+        log_out("Process: Set");
+        $RESPONSE_TITLE = "Palloo Set";
         if (isset($_GET["name"])) {
-          $setVars = input_cleanse(strtolower($_GET["name"]));
-          $funcUpdate = setUser($setVars, 1);
-          if (is_String($funcUpdate)) {
-            if (strpos($funcUpdate,'Error') !== False || strpos($funcUpdate,'error') !== False) {
-              $RESPONSE_BODY = "There was an error while setting the onCall user. Please contact the administrator.";
-              $alertVars = getAlertVars(0,"steven",array("title" => "Error while setting a user OnCall","msg" => "There was an error while setting the onCall user."));
-            } else {
-              $RESPONSE_BODY = $funcUpdate;
-            }
+          $nameToSet = input_cleanse(strtolower($_GET["name"]));
+          $setRes = setUser($nameToSet, 1);
+          if (strpos(strtolower($setRes), 'error') !== False) {
+            log_out("General error with setting.");
+            $RESPONSE_BODY = "There was an error while setting the onCall user. Please contact the administrator.";
+            log_out("Contacting administrator");
+            sendAlert(0,"admin",array("title" => "Error while setting a user OnCall","msg" => "There was an error while setting the onCall user."));
           } else {
-            $RESPONSE_BODY = "Unknown return type.";
+            $RESPONSE_BODY = $setRes;
           }
         } else {
+          log_out("Not a valid name for setting");
           $RESPONSE_BODY = "Please provide a valid name.";
         }
         break;
-      case "alert":
-        $getStorage = $_GET;
-        if (isset($getStorage["from"]) && input_cleanse($getStorage["from"]) == "uptime") {
-          $alertVars = getAlertVars(1,"oncall",$getStorage);
-        } else if (isset($getStorage["name"])){
-          $alertVars = getAlertVars(0,$getStorage["name"],$getStorage);
-        } else {
-          $alertVars = getAlertVars(0,"oncall",$getStorage);
-        }
-        
-        for($i=0;$i < count($alertVars);$i++){
-          if ($i == 0){
-            $RESPONSE_BODY .= "Title: " . $alertVars[$i] . "</br>";
-          } else if ($i == 1){
-            $RESPONSE_BODY .= "Message: " . $alertVars[$i] . "</br>";
+      case "avail":
+        log_out("Process: Avail");
+        $RESPONSE_TITLE = "Palloo Availability";
+        if ($extensionsJson["palloo"]["checks"]["avail"] == true) {
+          if(isset($_GET["set"])){
+            $toggleRes = setAvailability(stripper(strtolower($_GET["set"])));
           } else {
-            //$RESPONSE_BODY .= "$alertVars[$i] . "</br>";
+            $toggleRes = setAvailability();
           }
+          $RESPONSE_BODY = $toggleRes;
+        } else {
+          log_out("Availability swapping is disabled at this time.");
+          $RESPONSE_BODY = "Availability switching is unavailable at this time.";
         }
         break;
+      case "swappa":
       case "numswap":
-        if(isset($_GET["line"])){
-          if(strtolower($_GET["line"]) == "office" || strtolower($_GET["line"]) == "voicemail" || strtolower($_GET["line"]) == "mobile" || strtolower($_GET["line"]) == "home") {
-            $numSwapLine = swappa(ucfirst(strtolower($_GET["line"])));
-            $RESPONSE_BODY = "Current Line: " . $numSwapLine;
+        log_out("Process: Swappa");
+        $RESPONSE_TITLE = "Palloo Swapping";
+        if ($extensionsJson["palloo"]["checks"]["swap"] == true) {
+          if(isset($_GET["line"])){
+            if(strtolower($_GET["line"]) == "office" || strtolower($_GET["line"]) == "voicemail" || strtolower($_GET["line"]) == "mobile" || strtolower($_GET["line"]) == "home") {
+              $numSwapLine = swapNumbers(ucfirst(strtolower($_GET["line"])));
+              $RESPONSE_BODY = "Current Line: " . $numSwapLine;
+            } else {
+              log_out("Valid phone line not supplied");
+              $RESPONSE_BODY = "Please supply a valid phone line to swap to.";
+            }
           } else {
+            log_out("Valid phone line not supplied");
             $RESPONSE_BODY = "Please supply a valid phone line to swap to.";
           }
         } else {
-          $RESPONSE_BODY = "Please supply a valid phone line to swap to.";
+          log_out("Extension swapping disabled.");
+          $RESPONSE_BODY = "Extension swapping is unavailable at this time.";
         }
         break;
-      case "avail":
-        if(isset($_GET["set"])){
-          $toggleRes = availabilityToggling(stripper(strtolower($_GET["set"])));
-        } else {
-          $toggleRes = availabilityToggling();
-        }
-        $RESPONSE_BODY = $toggleRes;
-        break;
-      case "auto":
-        //Gather information from rotation file
-        shell_exec("cal.py");
-        $transferfilename = "Ext/phptransfer";
-        
-        if(file_exists($transferfilename)) {
-          $pyCapture = fopen($transferfilename, "r");
-          while(!feof($pyCapture)){
-              $transferFileInfo[] = fgets($pyCapture);
+      case "alert":
+        log_out("Process: Alert");
+        $RESPONSE_TITLE = "Palloo Alert";
+
+        if ($extensionsJson["palloo"]["checks"]["alert"] == true) {
+          $getStorage = $_GET;
+
+          if (isset($getStorage["from"]) && input_cleanse($getStorage["from"]) == "uptime") {
+            log_out("Uptime Robot notification");
+            if ($extensionsJson["palloo"]["oncall"]["alert"] == true) {
+              $alertResponse = sendAlert(1,"oncall",getStorage);
+            }
+          } else if (isset($getStorage["name"])) {
+            if (input_cleanse(strtolower($getStorage["name"] != "oncall")) && input_cleanse(strtolower($getStorage["name"] != "admin"))) {
+              foreach($extensionsJson["palloo"]["extensions"] as $user) {
+                if(input_cleanse(strtolower($getStorage["name"])) == input_cleanse(strtolower($user["name"]))) {
+                  if ($user["alert"] == true) {
+                    $alertResponse = sendAlert(0,$getStorage["name"],$getStorage);
+                  }
+                  break;
+                }
+              }
+              log_out("Alerts are disabled for this user");
+              $RESPONSE_BODY = "Alert sending to that user is unavailable at this time.";
+            } else {
+              $alertResponse = sendAlert(0,$getStorage["name"],$getStorage);
+            }
+          } else {
+            if ($extensionsJson["palloo"]["oncall"]["alert"] == true) {
+              $alertResponse = sendAlert(0,"oncall",getStorage);
+            }
           }
-          fclose($pyCapture);
-          $pyOutput = stripper($transferFileInfo[0]);
-          unlink($transferfilename);
         } else {
-          $RESPONSE_BODY = "There was an error gathering on call username. Please try again.";
-          $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run.","msg" => "There was an error gathering on call username. Please try again."));
-          break;
+          log_out("Sending alerts is disabled");
+          $RESPONSE_BODY = "Alert sending is unavailable at this time.";
         }
-        
-        $OCUser = checkUser(0);
-        
-        if(stripper($pyOutput) == stripper($OCUser) && strpos($OCUser,'Error') === False && strpos($OCUser,'error') === False) {
-          $RESPONSE_BODY = "The currently scheduled on-call user (" . ucfirst($pyOutput) .") is already set.";
-          $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($pyOutput)));
-          break;
-        } else if (strpos($OCUser,'Error') !== False || strpos($OCUser,'error') !== False) {
-          $RESPONSE_BODY = "There was an error while setting the onCall user. Please contact the administrator.";
-          $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => "There was an error while setting the onCall user."));
-          break;
-        }
-        
-        //Get ready to call setUser() function
-        $setVars = input_cleanse(strtolower($pyOutput));
-        $funcUpdate = setUser($setVars,0);
-        
-        //Once setting is over, check result
-        $OCUser = checkUser(0);
-        
-        
-        //If response from setting is a string and it isn't yelling about a bad name, finishing rotating in rotation file
-        if ($funcUpdate != $OCUser) {
-          //If the response from setting the value is yelling about a bad name, this happens.
-          $RESPONSE_BODY = "There was an error and something didn't update. Please try again.";
-          $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => "There was an error and something didn't update. Please try again."));
-        } else {
-          $alertVars = getAlertVars(0,"oncall",array("title" => "You are now on call","msg" => "You have been automatically set to on call based on a schedule. Good luck!"));
-          $RESPONSE_BODY = "The currently scheduled on-call user (" . ucfirst($pyOutput) .") has been set.";
-          if(strtolower($pyOutput) != 'steven') {
-            $alertVars = getAlertVars(0,"steven",array("title" => "OnCall Script has run","msg" => ucfirst($pyOutput)));
+
+        if(gettype($RESPONSE_BODY) != 'string' || $RESPONSE_BODY == "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>") {
+          $RESPONSE_BODY = "";
+          for($i=0;$i < count($alertResponse);$i++) {
+            if ($i == 0){
+              $RESPONSE_BODY .= "Title: " . $alertResponse[$i] . "</br>";
+            } else if ($i == 1){
+              $RESPONSE_BODY .= "Message: " . $alertResponse[$i] . "</br>";
+            } else {
+              //$RESPONSE_BODY .= "$alertResponse[$i] . "</br>";
+            }
           }
         }
         break;
       default:
+        log_out("Process: Help");
+        $RESPONSE_TITLE = "Palloo Help";
         $RESPONSE_BODY = "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>";
         break;
     }
   } else {
+    log_out("Process not set");
+    $RESPONSE_TITLE = "Palloo Help";
     $RESPONSE_BODY = "Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>";
   }
 }
 
-$htmlfilename = "return.html";
-$htmlFileInfo = [];
-$htmlhandle = fopen($htmlfilename, "r");
-while(!feof($htmlhandle)){
-  $htmlFileInfo[] = fgets($htmlhandle);
+#Do check to see whether the response should be html or json
+log_out("Opening template");
+$retfilename = "return.html";
+$retFileInfo = [];
+$rethandle = fopen($retfilename, "r");
+while(!feof($rethandle)){
+  $retFileInfo[] = fgets($rethandle);
 }
-fclose($htmlhandle);
+fclose($rethandle);
 
-$htmlFileInfo = str_replace("{{title}}", $RESPONSE_TITLE, $htmlFileInfo);
-$htmlFileInfo = str_replace("{{body}}", $RESPONSE_BODY, $htmlFileInfo);
+log_out("Replacing default template strings");
+$retFileInfo = str_replace("[[title]]", $RESPONSE_TITLE, $retFileInfo);
+log_out("Title: ". $RESPONSE_TITLE);
+$retFileInfo = str_replace("[[body]]", $RESPONSE_BODY, $retFileInfo);
+log_out("Body: ". $RESPONSE_BODY);
 
-foreach($htmlFileInfo as $line) {
+log_out("Returning template response");
+foreach($retFileInfo as $line) {
   echo $line;
+}
+if ($RESPONSE_TITLE == "Palloo Help") {
+  log_out("Deleting file",true);
+}
 ?>

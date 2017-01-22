@@ -1,5 +1,0 @@
-1-610-867-5309
-email@url.com
-SMS Carrier
-Alert method (SMS, Pushover, Pushbullet, Email)
-If Pushover, user token. If Pushbullet, personal email (or blank to use email on line 2). Email, same as Pushbullet

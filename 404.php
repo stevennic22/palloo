@@ -1,4 +1,8 @@
 <?php
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
 $logHandler = '';
 $fLogPath = '';
 
@@ -22,6 +26,7 @@ function make_log(){
 }
 
 function log_out($msg, $deleteMe = false){
+  echo $deleteMe;
   global $logHandler;
 
   if ($deleteMe === false) {
@@ -45,24 +50,15 @@ function log_out($msg, $deleteMe = false){
   }
 }
 
-log_out("Redirecting to HTTPS if server has it enabled.");
-if (!empty($_SERVER['HTTPS']) && ('on' == $_SERVER['HTTPS'])) {
-	$uri = 'https://';
-	$uri .= $_SERVER['HTTP_HOST'];
-	header('Location: '.$uri);
-} else {
-	$uri = 'http://';
-}
-
-$RESPONSE_TITLE = 'Index';
+$RESPONSE_TITLE = '404 - FILE NOT FOUND';
 log_out("Title: ". $RESPONSE_TITLE);
-$RESPONSE_BODY = '<a href="/Halloo/palloo.php">Palloo</a>';
+$RESPONSE_BODY = 'ERROR 404 - FILE NOT FOUND</br>';
 log_out("Body: ". $RESPONSE_BODY);
 
 $retfilename = "return.html";
 if (!file_exists($retfilename)) {
-	header($_SERVER['SERVER_PROTOCOL'] . ' 404 File Not Found', true, 404);
-	exit;
+  header($_SERVER['SERVER_PROTOCOL'] . ' 404 File Not Found', true, 404);
+  exit;
 }
 
 log_out("Opening template...");
