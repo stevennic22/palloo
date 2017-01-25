@@ -533,7 +533,7 @@ function setUser($userToSet, $rType) {
       foreach($userBeingSet as $key => $value) {
         $extJson["palloo"]["oncall"][$key] = $value;
       }
-      log_out("Updating extenstions file");
+      log_out("Updating extensions file");
       file_put_contents('extensions.json', json_encode($extJson,TRUE));
       
       if($rType == 1){
@@ -650,7 +650,7 @@ function sendAlert($from,$to = "oncall",$storage = array()) {
   $extJson = json_decode(file_get_contents("extensions.json"), true);
   
   if ($to == "oncall") {
-    if ($extJson["palloo"]["oncall"]["alert"] == false) {
+    if ($extJson["palloo"]["oncall"]["alert"] == "false") {
       log_out("Alert sending to this user is unavailable at this time.");
       return "Alert sending to this user is unavailable at this time.";
     }
@@ -659,7 +659,7 @@ function sendAlert($from,$to = "oncall",$storage = array()) {
   } else {
     foreach($extJson["palloo"]["extensions"] as $user) {
       if(input_cleanse(strtolower($to)) == input_cleanse(strtolower($user["name"]))) {
-        if ($user["alert"] == false) {
+        if ($user["alert"] == "false") {
           log_out("Alert sending to this user is unavailable at this time.");
           return "Alert sending to this user is unavailable at this time.";
         }
@@ -739,7 +739,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
       case "auto":
         log_out("Process: Auto");
         $RESPONSE_TITLE = "Palloo Auto-Rotate";
-        if ($extensionsJson["palloo"]["checks"]["auto"] == true) {
+        if ($extensionsJson["palloo"]["checks"]["auto"] == "true") {
           shell_exec("cal.py");
 
           $HOCUser = checkUser(0);
@@ -768,10 +768,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => "There was an error and something didn't update. Please try again."));
             break;
           } else {
-            //Check if oncall should be receiving alert
-            sendAlert(0,"oncall",array("title" => "You are now on call","msg" => "You have been automatically set to on call based on a schedule. Good luck!"));
+            unset($extensionsJson);
+            $extensionsJson = json_decode(file_get_contents("extensions.json"), true);
+            if ($extensionsJson["palloo"]["oncall"]["alert"] == true) {
+              sendAlert(0,"oncall",array("title" => "You are now on call","msg" => "You have been automatically set to on call based on a schedule. Good luck!"));
+            }
             $RESPONSE_BODY = "The currently scheduled on-call user (" . ucfirst($HOCUser) .") has been set.";
-            if(strtolower($HOCUser) != 'steven') {
+            if(strtolower($HOCUser) != strtolower($extensionsJson["palloo"]["admin"]["name"])) {
               sendAlert(0,"admin",array("title" => "OnCall Script has run","msg" => ucfirst($HOCUser)));
             }
             break;
@@ -815,7 +818,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
       case "avail":
         log_out("Process: Avail");
         $RESPONSE_TITLE = "Palloo Availability";
-        if ($extensionsJson["palloo"]["checks"]["avail"] == true) {
+        if ($extensionsJson["palloo"]["checks"]["avail"] == "true") {
           if(isset($_GET["set"])){
             $toggleRes = setAvailability(stripper(strtolower($_GET["set"])));
           } else {
@@ -831,7 +834,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
       case "numswap":
         log_out("Process: Swappa");
         $RESPONSE_TITLE = "Palloo Swapping";
-        if ($extensionsJson["palloo"]["checks"]["swap"] == true) {
+        if ($extensionsJson["palloo"]["checks"]["swap"] == "true") {
           if(isset($_GET["line"])){
             if(strtolower($_GET["line"]) == "office" || strtolower($_GET["line"]) == "voicemail" || strtolower($_GET["line"]) == "mobile" || strtolower($_GET["line"]) == "home") {
               $numSwapLine = swapNumbers(ucfirst(strtolower($_GET["line"])));
@@ -853,13 +856,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         log_out("Process: Alert");
         $RESPONSE_TITLE = "Palloo Alert";
 
-        if ($extensionsJson["palloo"]["checks"]["alert"] == true) {
+        if ($extensionsJson["palloo"]["checks"]["alert"] == "true") {
           $getStorage = $_GET;
 
           if (isset($getStorage["from"]) && input_cleanse($getStorage["from"]) == "uptime") {
             log_out("Uptime Robot notification");
-            if ($extensionsJson["palloo"]["oncall"]["alert"] == true) {
-              $alertResponse = sendAlert(1,"oncall",getStorage);
+            if ($extensionsJson["palloo"]["oncall"]["alert"] == "true") {
+              $alertResponse = sendAlert(1,"oncall",$getStorage);
             }
           } else if (isset($getStorage["name"])) {
             if (input_cleanse(strtolower($getStorage["name"] != "oncall")) && input_cleanse(strtolower($getStorage["name"] != "admin"))) {
