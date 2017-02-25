@@ -6,6 +6,8 @@ header("Pragma: no-cache");
 define('COOKIE_FILE', 'cookie.txt');
 define('USER_AGENT', 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36');
 
+$headers = apache_request_headers();
+
 if(!file_exists(COOKIE_FILE)) {
   $cookieFile = fopen(COOKIE_FILE, "w");
   fclose($cookieFile);
@@ -921,6 +923,12 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 #Do check to see whether the response should be html or json
 log_out("Opening template");
 $retfilename = "return.html";
+
+if (isset($headers['responsetype']) && strtolower($headers['responsetype']) == "json") {
+  log_out("JSON template chosen instead of HTML.");
+  $retfilename = "return.json";
+}
+
 $retFileInfo = [];
 $rethandle = fopen($retfilename, "r");
 while(!feof($rethandle)){
@@ -928,6 +936,8 @@ while(!feof($rethandle)){
 }
 fclose($rethandle);
 
+log_out("Replacing favicon placeholder");
+$retFileInfo = str_replace("[[favicon]]", "pfavicon.ico", $retFileInfo);
 log_out("Replacing default template strings");
 $retFileInfo = str_replace("[[title]]", $RESPONSE_TITLE, $retFileInfo);
 log_out("Title: ". $RESPONSE_TITLE);
