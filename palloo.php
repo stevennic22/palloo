@@ -922,11 +922,16 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
 #Do check to see whether the response should be html or json
 log_out("Opening template");
-$retfilename = "return.html";
+$retfilename = "return";
 
 if (isset($headers['responsetype']) && strtolower($headers['responsetype']) == "json") {
   log_out("JSON template chosen instead of HTML.");
-  $retfilename = "return.json";
+  $retfilename = $retfilename . ".json";
+} else if (isset($headers['responsetype']) && strtolower($headers['responsetype']) == "xml") {
+  log_out("XML template chosen instead of HTML.");
+  $retfilename = $retfilename . ".xml";
+} else {
+  $retfilename = $retfilename . ".html";
 }
 
 $retFileInfo = [];
