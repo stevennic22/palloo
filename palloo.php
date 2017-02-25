@@ -863,6 +863,9 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             log_out("Uptime Robot notification");
             if ($extensionsJson["palloo"]["oncall"]["alert"] == "true") {
               $alertResponse = sendAlert(1,"oncall",$getStorage);
+            } else {
+              log_out("Alerts are disabled for this user");
+              $RESPONSE_BODY = "Alert sending to the oncall user is unavailable at this time.";
             }
           } else if (isset($getStorage["name"])) {
             if (input_cleanse(strtolower($getStorage["name"] != "oncall")) && input_cleanse(strtolower($getStorage["name"] != "admin"))) {
