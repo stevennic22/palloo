@@ -1,4 +1,7 @@
 <?php
+$baseFileName = basename(__FILE__, '.php');
+require 'sharedFuncs.php';
+
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
@@ -8,8 +11,8 @@ define('USER_AGENT', 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, li
 
 $headers = apache_request_headers();
 
-$baseFileName = basename(__FILE__, '.php');
-include 'sharedFuncs.php';
+log_out($_SERVER['REQUEST_URI']);
+log_out(http_build_query($headers,'',', '));
 
 if(!file_exists(COOKIE_FILE)) {
   $cookieFile = fopen(COOKIE_FILE, "w");

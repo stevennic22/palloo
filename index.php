@@ -3,6 +3,10 @@
 $baseFileName = basename(__FILE__, '.php');
 include 'sharedFuncs.php';
 
+log_out($_SERVER['REQUEST_URI']);
+$headers = apache_request_headers();
+log_out(http_build_query($headers,'',', '));
+
 log_out("Redirecting to HTTPS if server has it enabled.");
 if (empty($_SERVER['HTTPS'])) {
 	$uri = 'https://';

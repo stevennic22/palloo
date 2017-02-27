@@ -1,10 +1,14 @@
 <?php
+$baseFileName = basename(__FILE__, '.php');
+include 'sharedFuncs.php';
+
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Pragma: no-cache");
 
-$baseFileName = basename(__FILE__, '.php');
-include 'sharedFuncs.php';
+log_out($_SERVER['REQUEST_URI']);
+$headers = apache_request_headers();
+log_out(http_build_query($headers,'',', '));
 
 $RESPONSE_TITLE = '403 - FORBIDDEN';
 log_out("Title: ". $RESPONSE_TITLE);
