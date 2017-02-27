@@ -33,12 +33,15 @@ while(!feof($rethandle)){
 }
 fclose($rethandle);
 
-log_out("Replacing default template strings...");
+log_out("Replacing favicon placeholder");
 $retFileInfo = str_replace("[[favicon]]", "favicon.ico", $retFileInfo);
+log_out("Replacing default template strings");
 $retFileInfo = str_replace("[[title]]", $RESPONSE_TITLE, $retFileInfo);
+log_out("Title: ". $RESPONSE_TITLE);
 $retFileInfo = str_replace("[[body]]", $RESPONSE_BODY, $retFileInfo);
+log_out("Body: ". $RESPONSE_BODY);
 
-log_out("Returning template information...");
+log_out("Returning template response...");
 foreach($retFileInfo as $line) {
   echo $line;
 }
