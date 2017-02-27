@@ -34,6 +34,7 @@ while(!feof($rethandle)){
 fclose($rethandle);
 
 log_out("Replacing default template strings...");
+$retFileInfo = str_replace("[[favicon]]", "favicon.ico", $retFileInfo);
 $retFileInfo = str_replace("[[title]]", $RESPONSE_TITLE, $retFileInfo);
 $retFileInfo = str_replace("[[body]]", $RESPONSE_BODY, $retFileInfo);
 
