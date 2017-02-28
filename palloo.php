@@ -23,7 +23,7 @@ $RESPONSE_TITLE = 'Palloo';
 $RESPONSE_BODY = 'Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>';
 
 log_out("Pulling contents of extensions.json");
-$extensionsJson = json_decode(file_get_contents("extensions.json"), true);
+$extensionsJson = json_decode(file_get_contents("../extensions.json"), true);
 
 log_out("Defining Halloo settings");
 define('USERNAME', $extensionsJson["palloo"]["admin"]["email"]);
@@ -272,7 +272,7 @@ function randomKey($length) {
 }
 
 function checkUser($rtype) {
-  $extJson = json_decode(file_get_contents("extensions.json"), true);
+  $extJson = json_decode(file_get_contents("../extensions.json"), true);
   $getHeaders = array("Host: my.halloo.com","User-Agent: ".USER_AGENT,"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8","Accept-Language: en-US,en;q=0.5","Accept-Encoding" => "gzip, deflate","Connection: keep-alive","Cache-Control: no-cache");
   
   curl_setopt_array($ch = curl_init(), array(CURLOPT_URL => 'http://my.halloo.com/ext/?view=User%20Settings&extn=oncall&tab=Forwarding',CURLOPT_FRESH_CONNECT => true,CURLOPT_TIMEOUT => 10,CURLOPT_COOKIEFILE => realpath(COOKIE_FILE),CURLOPT_COOKIEJAR => realpath(COOKIE_FILE),CURLOPT_HTTPHEADER => $getHeaders,CURLOPT_SAFE_UPLOAD => true,CURLOPT_SSL_VERIFYPEER => false,CURLOPT_RETURNTRANSFER => 1));
@@ -321,7 +321,7 @@ function checkUser($rtype) {
             $extJson["palloo"]["oncall"][$key] = $value;
           }
           log_out("Returning: On Call file updated. User: " . ucfirst($extJson["palloo"]["oncall"]["name"]));
-          file_put_contents('extensions.json', json_encode($extJson,TRUE));
+          file_put_contents('../extensions.json', json_encode($extJson,TRUE));
           return("On Call file updated. User: " . ucfirst($extJson["palloo"]["oncall"]["name"]));
         } else {
           #Find name of user on call in Halloo, return that
@@ -340,7 +340,7 @@ function checkUser($rtype) {
 }
 
 function setUser($userToSet, $rType) {
-  $extJson = json_decode(file_get_contents("extensions.json"), true);
+  $extJson = json_decode(file_get_contents("../extensions.json"), true);
   $userBeingSet = [];
   foreach($extJson["palloo"]["extensions"] as $user) {
     if(strtolower(stripper($userToSet)) == strtolower(stripper($user["name"]))) {
@@ -485,7 +485,7 @@ function setUser($userToSet, $rType) {
         $extJson["palloo"]["oncall"][$key] = $value;
       }
       log_out("Updating extensions file");
-      file_put_contents('extensions.json', json_encode($extJson,TRUE));
+      file_put_contents('../extensions.json', json_encode($extJson,TRUE));
       
       if($rType == 1){
         log_out("Returning: User's extension is now set on Halloo and On Call file is up to date. User: " . $extJson["palloo"]["oncall"]["name"]);
@@ -598,7 +598,7 @@ function alertOutput($file,$comVars) {
 }
 
 function sendAlert($from,$to = "oncall",$storage = array()) {
-  $extJson = json_decode(file_get_contents("extensions.json"), true);
+  $extJson = json_decode(file_get_contents("../extensions.json"), true);
   
   if ($to == "oncall") {
     if ($extJson["palloo"]["oncall"]["alert"] == "false") {
@@ -720,7 +720,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             break;
           } else {
             unset($extensionsJson);
-            $extensionsJson = json_decode(file_get_contents("extensions.json"), true);
+            $extensionsJson = json_decode(file_get_contents("../extensions.json"), true);
             if ($extensionsJson["palloo"]["oncall"]["alert"] == true) {
               sendAlert(0,"oncall",array("title" => "You are now on call","msg" => "You have been automatically set to on call based on a schedule. Good luck!"));
             }
@@ -835,7 +835,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             }
           } else {
             if ($extensionsJson["palloo"]["oncall"]["alert"] == true) {
-              $alertResponse = sendAlert(0,"oncall",getStorage);
+              $alertResponse = sendAlert(0,"oncall",$getStorage);
             }
           }
         } else {

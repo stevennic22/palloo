@@ -29,7 +29,7 @@ except ImportError:
   flags = None
 
 SCOPES = "https://www.googleapis.com/auth/calendar.readonly"
-CLIENT_SECRET_FILE = os.path.normpath("client_secret.json")
+CLIENT_SECRET_FILE = os.path.normpath("..\\client_secret.json")
 APPLICATION_NAME = "Google Calendar API Python Quickstart"
 
 def findName(eventString):
@@ -80,7 +80,7 @@ def theMainEvent(listOfEvents,events):
     return("Well... Do something 3")
 
 def get_credentials():
-  credential_path = 'calendar-python-quickstart.json'
+  credential_path = '..\\calendar-python-quickstart.json'
   store = oauth2client.file.Storage(credential_path)
   credentials = store.get()
   if not credentials or credentials.invalid:
