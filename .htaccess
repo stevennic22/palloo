@@ -1,6 +1,6 @@
 RewriteEngine On
-RewriteRule   palloo   palloo.php
-RewriteRule   index   index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
 
 ErrorDocument 404 /404.php
 ErrorDocument 403 /403.php
