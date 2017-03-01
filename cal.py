@@ -124,7 +124,7 @@ def main():
     eventNum = 0
     log.info("Logging events:")
     for event in events:
-      datum = datetime.datetime.now().strftime("%Y-%m-%d")
+      datum = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
       start = event['start'].get('dateTime', event['start'].get('date'))
       log.info("      " + string.lower(start) + ": " + string.lower(event["summary"]))
       if(('on-call' in string.lower(event['summary']) or 'on call' in string.lower(event['summary']) or 'oncall' in string.lower(event['summary'])) and (start <= datum)):
