@@ -58,4 +58,36 @@ function log_out($msg, $deleteMe = false){
   }
 }
 
+function respondToRequest($title = "Help", $body = "Please contact the administrator for assistance.", $favicon = "favicon.ico", $fileType = "html") {
+  $resFilename = "return";
+
+  if (file_exists($resFilename . "." . strtolower($fileType))) {
+    log_out("Filetype (" . $fileType . ") exists, using it for response.");
+    $resFilename = $resFilename . "." . strtolower($fileType);
+  } else {
+    log_out("Filetype (" . $fileType . ") does not exist, using HTML for response.");
+    $resFilename = $resFilename . ".html";
+  }
+
+  $resFileInfo = [];
+  $resFilehandle = fopen($resFilename, "r");
+  while(!feof($resFilehandle)){
+    $resFileInfo[] = fgets($resFilehandle);
+  }
+  fclose($resFilehandle);
+
+  log_out("Replacing default template strings");
+  $resFileInfo = str_replace("[[favicon]]", $favicon, $resFileInfo);
+  log_out("Favicon: " . $favicon);
+  $resFileInfo = str_replace("[[title]]", $title, $resFileInfo);
+  log_out("Title: ". $title);
+  $resFileInfo = str_replace("[[body]]", $body, $resFileInfo);
+  log_out("Body: ". $body);
+
+  log_out("Returning template response");
+  foreach($resFileInfo as $line) {
+    echo $line;
+  }
+}
+
 ?>

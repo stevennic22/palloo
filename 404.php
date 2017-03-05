@@ -15,26 +15,10 @@ log_out("Title: ". $RESPONSE_TITLE);
 $RESPONSE_BODY = 'ERROR 404 - FILE NOT FOUND</br>';
 log_out("Body: ". $RESPONSE_BODY);
 
-$retfilename = "return.html";
-if (!file_exists($retfilename)) {
-  header($_SERVER['SERVER_PROTOCOL'] . ' 404 File Not Found', true, 404);
+if (!file_exists("return.html")) {
+  header($_SERVER['SERVER_PROTOCOL'] . ' 404 FILE NOT FOUND', true, 4041);
   exit;
-}
-
-log_out("Opening template...");
-$retFileInfo = [];
-$rethandle = fopen($retfilename, "r");
-while(!feof($rethandle)){
-  $retFileInfo[] = fgets($rethandle);
-}
-fclose($rethandle);
-
-log_out("Replacing default template strings...");
-$retFileInfo = str_replace("[[title]]", $RESPONSE_TITLE, $retFileInfo);
-$retFileInfo = str_replace("[[body]]", $RESPONSE_BODY, $retFileInfo);
-
-log_out("Returning template information...");
-foreach($retFileInfo as $line) {
-  echo $line;
+} else {
+  respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "favicon.ico", "html");
 }
 ?>

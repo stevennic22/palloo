@@ -10,32 +10,15 @@ log_out($_SERVER['REQUEST_URI']);
 $headers = apache_request_headers();
 log_out(http_build_query($headers,'',', '));
 
-$RESPONSE_TITLE = 'INTERNAL SERVER ERROR - 500';
+$RESPONSE_TITLE = '500 - INTERNAL SERVER ERROR';
 log_out("Title: ". $RESPONSE_TITLE);
 $RESPONSE_BODY = 'ERROR 500 - INTERNAL SERVER ERROR</br>';
 log_out("Body: ". $RESPONSE_BODY);
 
-$retfilename = "return.html";
-if (!file_exists($retfilename)) {
-  header($_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error', true, 500);
+if (!file_exists("return.html")) {
+  header($_SERVER['SERVER_PROTOCOL'] . ' 500 INTERNAL SERVER ERROR', true, 500);
   exit;
-}
-
-log_out("Opening template...");
-$retFileInfo = [];
-$rethandle = fopen($retfilename, "r");
-
-while(!feof($rethandle)){
-  $retFileInfo[] = fgets($rethandle);
-}
-fclose($rethandle);
-
-log_out("Replacing default template strings...");
-$retFileInfo = str_replace("[[title]]", $RESPONSE_TITLE, $retFileInfo);
-$retFileInfo = str_replace("[[body]]", $RESPONSE_BODY, $retFileInfo);
-
-log_out("Returning template information...");
-foreach($retFileInfo as $line) {
-  echo $line;
+} else {
+  respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "favicon.ico", "html");
 }
 ?>

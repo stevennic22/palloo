@@ -10,13 +10,13 @@ log_out($_SERVER['REQUEST_URI']);
 $headers = apache_request_headers();
 log_out(http_build_query($headers,'',', '));
 
-$RESPONSE_TITLE = '403 - FORBIDDEN';
+$RESPONSE_TITLE = '401 - Unauthorized';
 log_out("Title: ". $RESPONSE_TITLE);
-$RESPONSE_BODY = 'ERROR 403 - FORBIDDEN</br>';
+$RESPONSE_BODY = 'ERROR 401 - UNAUTHORIZED</br>';
 log_out("Body: ". $RESPONSE_BODY);
 
 if (!file_exists("return.html")) {
-  header($_SERVER['SERVER_PROTOCOL'] . ' 403 Forbidden', true, 403);
+  header($_SERVER['SERVER_PROTOCOL'] . ' 401 Unauthorized', true, 401);
   exit;
 } else {
   respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "favicon.ico", "html");

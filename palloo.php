@@ -869,43 +869,12 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
   }
 }
 
-#Do check to see whether the response should be html or json
-log_out("Opening template");
-$retfilename = "return";
-
 if (isset($headers['responsetype'])) {
-  log_out(strtolower($headers['responsetype']) . " template chosen instead of HTML.");
-
-  if (file_exists($retfilename . "." . strtolower($headers['responsetype']))) {
-    log_out("Filetype exists, using it for response.");
-    $retfilename = $retfilename . "." . strtolower($headers['responsetype']);
-  } else {
-    log_out("Filetype does not exist, using HTML for response.");
-    $retfilename = $retfilename . ".html";
-  }
+  respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", strtolower($headers['responsetype']));
 } else {
-  $retfilename = $retfilename . ".html";
+  respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", "html");
 }
 
-$retFileInfo = [];
-$rethandle = fopen($retfilename, "r");
-while(!feof($rethandle)){
-  $retFileInfo[] = fgets($rethandle);
-}
-fclose($rethandle);
-
-log_out("Replacing favicon placeholder");
-$retFileInfo = str_replace("[[favicon]]", "pfavicon.ico", $retFileInfo);
-log_out("Replacing default template strings");
-$retFileInfo = str_replace("[[title]]", $RESPONSE_TITLE, $retFileInfo);
-log_out("Title: ". $RESPONSE_TITLE);
-$retFileInfo = str_replace("[[body]]", $RESPONSE_BODY, $retFileInfo);
-log_out("Body: ". $RESPONSE_BODY);
-
-log_out("Returning template response");
-foreach($retFileInfo as $line) {
-  echo $line;
-}
 if ($RESPONSE_TITLE == "Palloo Help") {
   log_out("Deleting file",true);
 }
