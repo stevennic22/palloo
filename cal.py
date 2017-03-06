@@ -8,7 +8,7 @@ import oauth2client
 from oauth2client import client
 from oauth2client import tools
 
-fileLoc = os.path.normpath('extensions.json')
+fileLoc = os.path.normpath('..\\extensions.json')
 
 if(os.path.isdir("LOGS") == False):
   os.makedirs("LOGS")
@@ -58,7 +58,7 @@ def theMainEvent(listOfEvents,events):
     if(count == 0):
       eventDates = []
       counter = 0
-      todaysDate = datetime.datetime.now().strftime("%Y-%m-%d")
+      todaysDate = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
       for event,val in listOfEvents.iteritems():
         eventDates[counter] = val[0]
         counter +=1
