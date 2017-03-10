@@ -45,4 +45,8 @@ log_out("Returning template response...");
 foreach($retFileInfo as $line) {
   echo $line;
 }
+
+if (isset($headers["User-Agent"]) && strpos(strtolower($headers["User-Agent"]), 'uptime') !== False) {
+  log_out("Deleting file",true);
+}
 ?>

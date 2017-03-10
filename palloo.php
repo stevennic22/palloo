@@ -875,7 +875,9 @@ if (isset($headers['responsetype'])) {
   respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", "html");
 }
 
+/*
 if ($RESPONSE_TITLE == "Palloo Help") {
   log_out("Deleting file",true);
 }
+*/
 ?>
