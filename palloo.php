@@ -869,15 +869,12 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
   }
 }
 
-if (isset($headers['responsetype'])) {
-  respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", strtolower($headers['responsetype']));
+if (isset($headers['Accept'])) {
+  respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", strtolower($headers['Accept']));
+} else if (isset($headers['accept'])) {
+  respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", strtolower($headers['accept']));
 } else {
-  respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", "html");
+  respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", "text/html");
 }
 
-/*
-if ($RESPONSE_TITLE == "Palloo Help") {
-  log_out("Deleting file",true);
-}
-*/
 ?>

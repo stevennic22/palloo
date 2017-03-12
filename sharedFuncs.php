@@ -58,14 +58,23 @@ function log_out($msg, $deleteMe = false){
   }
 }
 
-function respondToRequest($title = "Help", $body = "Please contact the administrator for assistance.", $favicon = "favicon.ico", $fileType = "html") {
+function respondToRequest($title = "Help", $body = "Please contact the administrator for assistance.", $favicon = "favicon.ico", $acceptType = "text/html") {
   $resFilename = "return";
 
-  if (file_exists($resFilename . "." . strtolower($fileType))) {
-    log_out("Filetype (" . $fileType . ") exists, using it for response.");
-    $resFilename = $resFilename . "." . strtolower($fileType);
+  if(strpos(strtolower($acceptType), 'text/html') !== False) {
+    log_out("Filetype found in: (" . $acceptType . "), using it for response.");
+    $resFilename = $resFilename . ".html";
+  } else if(strpos(strtolower($acceptType), 'application/json') !== False) {
+    log_out("Filetype found in: (" . $acceptType . "), using it for response.");
+    $resFilename = $resFilename . ".json";
+  } else if(strpos(strtolower($acceptType), 'application/xml') !== False) {
+    log_out("Filetype found in: (" . $acceptType . "), using it for response.");
+    $resFilename = $resFilename . ".xml";
+  } else if(strpos(strtolower($acceptType), 'text/plain') !== False) {
+    log_out("Filetype found in: (" . $acceptType . "), using it for response.");
+    $resFilename = $resFilename . ".txt";
   } else {
-    log_out("Filetype (" . $fileType . ") does not exist, using HTML for response.");
+    log_out("Filetype (" . $acceptType . ") does not match existing return types, using HTML for response.");
     $resFilename = $resFilename . ".html";
   }
 
