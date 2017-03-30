@@ -9,11 +9,11 @@ from oauth2client import client
 from oauth2client import tools
 
 fileLoc = os.path.normpath('..\\extensions.json')
+logFileDir = "LOGS"
 
-if(os.path.isdir("LOGS") == False):
-  os.makedirs("LOGS")
-logFileName = os.path.normpath("LOGS\CalCheck") + datetime.datetime.now().strftime("%y%m%d%H%M%S") + ".LOG"
-loglevel = logging.INFO
+if(os.path.isdir(logFileDir) == False):
+  os.makedirs(logFileDir)
+logFileName = os.path.normpath(logFileDir + "/" + os.path.splitext(__file__)[0] + datetime.datetime.now().strftime("%y%m%d%H%M%S") + ".LOG")
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)

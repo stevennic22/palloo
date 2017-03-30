@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 import os, sys, getopt, smtplib, logging, datetime
 
-if(os.path.isdir("LOGS") == False):
-  os.makedirs("LOGS")
-logFileName = os.path.normpath("LOGS\sendMail") + datetime.datetime.now().strftime("%y%m%d%H%M%S") + ".LOG"
-loglevel = logging.INFO
+logFileDir = "LOGS"
+
+if(os.path.isdir(logFileDir) == False):
+  os.makedirs(logFileDir)
+logFileName = os.path.normpath(logFileDir + "/" + os.path.splitext(__file__)[0] + datetime.datetime.now().strftime("%y%m%d%H%M%S") + ".LOG")
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
