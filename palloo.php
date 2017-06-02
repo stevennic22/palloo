@@ -22,7 +22,10 @@ if(!file_exists(COOKIE_FILE)) {
 $RESPONSE_TITLE = 'Palloo';
 $RESPONSE_BODY = 'Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>';
 
-if (isInternational(countryIPCheck($_SERVER['REMOTE_ADDR']), array("US"))) {
+log_out("Pulling contents of extensions.json");
+$extensionsJson = json_decode(file_get_contents("../extensions.json"), true);
+
+if (isInternational(countryIPCheck($_SERVER['REMOTE_ADDR'], $extensionsJson["publicip"]), array("US"))) {
   log_out("Is International.");
   if (isset($headers['Accept'])) {
     respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", strtolower($headers['Accept']));
@@ -32,9 +35,6 @@ if (isInternational(countryIPCheck($_SERVER['REMOTE_ADDR']), array("US"))) {
     respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", "text/html");
   }
 }
-
-log_out("Pulling contents of extensions.json");
-$extensionsJson = json_decode(file_get_contents("../extensions.json"), true);
 
 log_out("Defining Halloo settings");
 define('USERNAME', $extensionsJson["palloo"]["admin"]["email"]);

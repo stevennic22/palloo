@@ -58,18 +58,20 @@ function log_out($msg, $deleteMe = false){
   }
 }
 
-function countryIPCheck($IPAddress) 
+function countryIPCheck($IPAddress, $pubIP = False) {
   if (isset($_GET["c"])) {
     return($_GET["c"]);
   }
-  $publicIP = @file_get_contents('https://api.ipify.org?format=json');
-  if (!$publicIP === False) {
-    $publicIP = json_decode($publicIP, true)["ip"];
-  } else {
-    $publicIP = $_SERVER["SERVER_ADDR"];
+  if (!$pubIP) {
+    $publicIP = @file_get_contents('https://api.ipify.org?format=json');
+    if (!$publicIP === False) {
+      $pubIP = json_decode($publicIP, true)["ip"];
+    } else {
+      $pubIP = $_SERVER["SERVER_ADDR"];
+    }
   }
 
-  if ((strpos($IPAddress, '192.168') === FALSE) && (strpos($IPAddress, '127.0.0.1') === FALSE) && (strpos($IPAddress, '10.0.0') === FALSE) && (strpos($IPAddress, $publicIP) === FALSE)) {
+  if ((strpos($IPAddress, '192.168') === FALSE) && (strpos($IPAddress, '127.0.0.1') === FALSE) && (strpos($IPAddress, '10.0.0') === FALSE) && (strpos($IPAddress, $pubIP) === FALSE)) {
     $ip_check_1 = @file_get_contents("http://ipinfo.io/" . $IPAddress . "/json");
     
     if (!$ip_check_1 === False) {
