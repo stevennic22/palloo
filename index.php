@@ -5,7 +5,8 @@ include 'sharedFuncs.php';
 
 log_out($_SERVER['REQUEST_URI']);
 $headers = apache_request_headers();
-log_out(http_build_query($headers,'',', '));
+log_out("SERVER Info: " . http_build_query($_SERVER,'',', '));
+log_out("Headers: " . http_build_query($headers,'',', '));
 
 log_out("Redirecting to HTTPS if server has it enabled.");
 if (empty($_SERVER['HTTPS'])) {
@@ -15,9 +16,7 @@ if (empty($_SERVER['HTTPS'])) {
 }
 
 $RESPONSE_TITLE = 'Index';
-log_out("Title: ". $RESPONSE_TITLE);
-$RESPONSE_BODY = '<a href="/Halloo/palloo.php">Palloo</a>';
-log_out("Body: ". $RESPONSE_BODY);
+$RESPONSE_BODY = 'Under Construction. Please check back later.';
 
 $retfilename = "return.html";
 if (!file_exists($retfilename)) {

@@ -10,9 +10,9 @@ define('COOKIE_FILE', 'cookie.txt');
 define('USER_AGENT', 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36');
 
 $headers = apache_request_headers();
-
 log_out($_SERVER['REQUEST_URI']);
-log_out(http_build_query($headers,'',', '));
+log_out("SERVER Info: " . http_build_query($_SERVER,'',', '));
+log_out("Headers: " . http_build_query($headers,'',', '));
 
 if(!file_exists(COOKIE_FILE)) {
   $cookieFile = fopen(COOKIE_FILE, "w");
@@ -21,6 +21,17 @@ if(!file_exists(COOKIE_FILE)) {
 
 $RESPONSE_TITLE = 'Palloo';
 $RESPONSE_BODY = 'Available functions:<br><br>&bull;Check<br>&bull;Set<br>&bull;Alert<br>&bull;Auto<br>';
+
+if (isInternational(countryIPCheck($_SERVER['REMOTE_ADDR']), array("US"))) {
+  log_out("Is International.");
+  if (isset($headers['Accept'])) {
+    respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", strtolower($headers['Accept']));
+  } else if (isset($headers['accept'])) {
+    respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", strtolower($headers['accept']));
+  } else {
+    respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "pfavicon.ico", "text/html");
+  }
+}
 
 log_out("Pulling contents of extensions.json");
 $extensionsJson = json_decode(file_get_contents("../extensions.json"), true);

@@ -8,7 +8,8 @@ header("Pragma: no-cache");
 
 log_out($_SERVER['REQUEST_URI']);
 $headers = apache_request_headers();
-log_out(http_build_query($headers,'',', '));
+log_out("SERVER Info: " . http_build_query($_SERVER,'',', '));
+log_out("Headers: " . http_build_query($headers,'',', '));
 
 $RESPONSE_TITLE = '400 - Bad Request';
 log_out("Title: ". $RESPONSE_TITLE);
@@ -19,6 +20,6 @@ if (!file_exists("return.html")) {
   header($_SERVER['SERVER_PROTOCOL'] . ' 400 Bad Request', true, 400);
   exit;
 } else {
-  respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "favicon.ico", "html");
+  respondToRequest($RESPONSE_TITLE, $RESPONSE_BODY, "favicon.ico");
 }
 ?>
