@@ -62,6 +62,7 @@ function countryIPCheck($IPAddress, $pubIP = False) {
   if (isset($_GET["c"])) {
     return($_GET["c"]);
   }
+
   if (!$pubIP) {
     $publicIP = @file_get_contents('https://api.ipify.org?format=json');
     if (!$publicIP === False) {
@@ -109,30 +110,86 @@ function isInternational($input_country, $non_int_country_codes = array("US", "C
   return($int_country);
 }
 
-function respondToRequest($title = "Help", $body = "Please contact the administrator for assistance.", $favicon = "favicon.ico", $acceptType = "text/html") {
+function respondToRequest($title = "Help", $body = "Please contact the administrator for assistance.", $favicon = "favicon.ico", $acceptType = "text/html", $exitOnEnd = true) {
   $resFilename = "return";
 
-  if(strpos(strtolower($acceptType), 'text/html') !== False) {
+  if(strpos(strtolower($acceptType), 'html') !== False) {
     log_out("Filetype found in: (" . $acceptType . "), using it for response.");
     $resFilename = $resFilename . ".html";
-  } else if(strpos(strtolower($acceptType), 'application/json') !== False) {
+    if(gettype($body) == "array") {
+      $interimBody = $body["name"];
+      $count = count($body["values"]);
+      $i = 1;
+      foreach($body["values"] as $item) {
+        if ($i == $count) {
+          $interimBody .= $item;
+        } else {
+          $interimBody .= $item . "</br>";
+        }
+        $i++;
+      }
+      $body = $interimBody;
+    }
+  } else if(strpos(strtolower($acceptType), 'json') !== False) {
     log_out("Filetype found in: (" . $acceptType . "), using it for response.");
     $resFilename = $resFilename . ".json";
-    $body = str_replace("&bull;", "• ", $body);
-    $body = str_replace(array("</br>","<br>"), "\n", $body);
-  } else if(strpos(strtolower($acceptType), 'application/xml') !== False) {
+    if(gettype($body) == "string") {
+      $body = '"' . $body . '"';
+    } else if(gettype($body) == "array") {
+      $body["name"] = str_replace(array("&bull; ", "&bull;","</br>","<br>"), "", $body["name"]);
+      foreach($body["values"] as &$item) {
+        $item = str_replace(array("&bull; ", "&bull;","</br>","<br>"), "", $item);
+      }
+      $body = json_encode($body);
+    }
+  } else if(strpos(strtolower($acceptType), 'xml') !== False) {
     log_out("Filetype found in: (" . $acceptType . "), using it for response.");
     $resFilename = $resFilename . ".xml";
-    $body = str_replace("&bull;", "• ", $body);
+    if(gettype($body) == "array") {
+      $interimBody = "\n   <name>" . $body["name"] . "</name>\n";
+      foreach($body["values"] as $item) {
+        $interimBody .= "    <value>" . $item . "</value>\n";
+      }
+      $body = $interimBody;
+    }
+    $body = str_replace(array("&bull; ", "&bull;"), "", $body);
     $body = str_replace(array("</br>","<br>"), "", $body);
-  } else if(strpos(strtolower($acceptType), 'text/plain') !== False) {
+  } else if(strpos(strtolower($acceptType), 'text') !== False) {
     log_out("Filetype found in: (" . $acceptType . "), using it for response.");
     $resFilename = $resFilename . ".txt";
-    $body = str_replace("&bull;", "• ", $body);
-    $body = str_replace(array("</br>","<br>"), "\n", $body);
+    if(gettype($body) == "array") {
+      $interimBody = $body["name"];
+      $count = count($body["values"]);
+      $i = 1;
+      foreach($body["values"] as $item) {
+        if ($i == $count) {
+          $interimBody .= $item;
+        } else {
+          $interimBody .= $item . "\n";
+        }
+        $i++;
+      }
+      $body = $interimBody;
+    }
+    $body = str_replace("&bull;", "•", $body);
+    $body = str_replace("</br>", "\n", $body);
   } else {
     log_out("Filetype (" . $acceptType . ") does not match existing return types, using HTML for response.");
     $resFilename = $resFilename . ".html";
+    if(gettype($body) == "array") {
+      $interimBody = $body["name"];
+      $count = count($body["values"]);
+      $i = 1;
+      foreach($body["values"] as $item) {
+        if ($i == $count) {
+          $interimBody .= $item;
+        } else {
+          $interimBody .= $item . "</br>";
+        }
+        $i++;
+      }
+      $body = $interimBody;
+    }
   }
 
   $resFileInfo = [];
@@ -154,7 +211,9 @@ function respondToRequest($title = "Help", $body = "Please contact the administr
   foreach($resFileInfo as $line) {
     echo $line;
   }
-  exit();
+  if ($exitOnEnd) {
+    exit();
+  }
 }
 
 ?>
