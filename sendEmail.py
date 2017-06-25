@@ -6,7 +6,7 @@ logFileDir = "LOGS"
 
 if(os.path.isdir(logFileDir) == False):
   os.makedirs(logFileDir)
-logFileName = os.path.normpath(logFileDir + "/" + os.path.splitext(__file__)[0] + datetime.datetime.now().strftime("%y%m%d%H%M%S") + ".LOG")
+logFileName = os.path.normpath(logFileDir + os.sep + os.path.splitext(__file__)[0] + datetime.datetime.now().strftime("%y%m%d%H%M%S") + ".LOG")
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
@@ -15,17 +15,26 @@ formatter = logging.Formatter("[%(asctime)s] '%(levelname)s': {%(message)s}")
 handler.setFormatter(formatter)
 log.addHandler(handler)
 
-def errPrint():
-  helpMsg = '''-h, --help
-   prints this help command
--r, --recipient
-   attaches new recipient to email
--m, --msg
-   attaches email body content
--t, --title
-   attaches new email title'''
-  print helpMsg
-  log.info(helpMsg)
+def errPrint(errorToLog):
+  log.error(errorToLog)
+
+  errorText = '''
+-h, --help
+  prints this help command
+
+The following arguments must be used together to properly send an email.
+
+USAGE: sendEmail.py -r "username@domain.com" -t "Title" -m "Message"
+
+-r, --recipient=
+  indicates the recipient of the email (to)
+-t, --title=
+  indicates the title or subject of the email
+-m, --msg=
+  indicates the body of text of the email'''
+  
+  print errorText
+  log.warning(errorText)
 
 def sendingMail(messageToSend):
   try:
@@ -68,20 +77,17 @@ def main(argv):
   try:
     opts, args = getopt.getopt(argv,"hr:m:t:", ["help", "recipient=", "msg=", "title="])
     if not opts:
-      # Return proper usage of script if in error
-      log.warning("No arguments provided. Printing help message and closing.")
-      errPrint()
-      exit()
+		# Return proper usage of script if in error
+		errPrint("No arguments provided. Printing help message and closing.")
+		exit()
   except getopt.GetoptError:
     # Return proper usage of script if in error
-    log.warning("No arguments provided. Printing help message and closing.")
-    errPrint()
+    errPrint("No arguments provided. Printing help message and closing.")
     sys.exit(2)
   for opt, arg in opts:
     if opt in ("-h", "--help"):
       # Return proper usage of script if in error
-      log.info("Help message requested. Printing help message and closing.")
-      errPrint()
+      errPrint("Help message requested. Printing help message and closing.")
       sys.exit(2)
     elif opt in ("-r", "--recipient"):
       msgSetup["recipient"] = arg
